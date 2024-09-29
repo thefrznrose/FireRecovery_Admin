@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Next.js +  Mantine + ESLint (Strict) template
 
 This is a template for [Next.js](https://nextjs.org/) pages router + [Mantine](https://mantine.dev/).
@@ -35,3 +36,6 @@ This template comes with the following features:
 - `storybook` – starts storybook dev server
 - `storybook:build` – build production storybook bundle to `storybook-static`
 - `prettier:write` – formats all files with Prettier
+=======
+# FireRecovery_Admin
+>>>>>>> f39b8855ef98cc83a00586f6bdcbb1793fafda87
