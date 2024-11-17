@@ -19,6 +19,7 @@ export default function PhotoGrid() {
                 const data = await response.json();
                 if (Array.isArray(data)) {
                     setPhotos(data);
+                    console.log(data);
                 } else {
                     console.error('Error: Expected an array, but received', typeof data);
                 }
@@ -105,22 +106,35 @@ export default function PhotoGrid() {
                                 shadow="md"
                                 radius="md"
                                 style={{
-                                    aspectRatio: '3 / 4', // Ensures boxes maintain a 3:4 ratio
-                                    padding: '1rem',
+                                    height: '350px', // Standardized height for all items
+                                    width: '100%', // Full width for responsive layout
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
+                                    padding: '1rem',
                                     gap: '0.5rem',
                                 }}
                             >
-                                <Image
-                                    style={{ objectFit: 'cover', borderRadius: '8px' }}
-                                    src={`data:image/jpeg;base64,${photo.image}`}
-                                    alt={`Photo ${index + 1}`}
-                                    width="100%" // Makes image fill the container's width
-                                    height="auto" // Ensures aspect ratio is preserved
-                                />
+                                <div
+                                    style={{
+                                        width: '100%',
+                                        height: '70%', // Allocate 70% of the container for the image
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <Image
+                                        style={{
+                                            objectFit: 'contain', // Ensures the full image is visible
+                                            maxWidth: '100%',
+                                            maxHeight: '100%',
+                                        }}
+                                        src={`data:image/jpeg;base64,${photo.image}`}
+                                        alt={`Photo ${index + 1}`}
+                                    />
+                                </div>
                                 <Text>
                                     {`Uploader name: ${photo.uploaderName || '[NAME]'}`}
                                 </Text>
