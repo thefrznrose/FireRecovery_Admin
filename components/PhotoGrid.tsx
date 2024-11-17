@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Grid, Image, Loader, Text, Button, Group, Select, Paper } from '@mantine/core';
+import { Grid, Image, Loader, Text, Button, Group, Select, Paper, RangeSlider } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 
 export default function PhotoGrid() {
     const [photos, setPhotos] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [filter, setFilter] = useState<string | null>(null);
+    const [startMonth, setStartMonth] = useState<string | null>(null);
+    const [startYear, setStartYear] = useState<string | null>(null);
+    const [endMonth, setEndMonth] = useState<string | null>(null);
+    const [endYear, setEndYear] = useState<string | null>(null);
 
     // Media queries for responsive grid adjustments
     const isLargeScreen = useMediaQuery('(min-width: 1200px)');
@@ -19,7 +23,6 @@ export default function PhotoGrid() {
                 const data = await response.json();
                 if (Array.isArray(data)) {
                     setPhotos(data);
-                    console.log(data);
                 } else {
                     console.error('Error: Expected an array, but received', typeof data);
                 }
@@ -60,33 +63,137 @@ export default function PhotoGrid() {
         return <Text>No photos available</Text>;
     }
 
+    const marks = [
+        { value: 20, label: '20%' },
+        { value: 50, label: '50%' },
+        { value: 80, label: '80%' },
+      ];
+
     return (
         <Grid>
             {/* Sidebar */}
             <Grid.Col span={3}>
-                <Paper withBorder style={{ padding: '1rem', boxShadow: 'sm' }}>
+                <Paper withBorder style={{ padding: '1rem', boxShadow: 'sm', height: '100vh' }}>
                     <Text size="lg" mb="sm" style={{ fontWeight: 500 }}>
                         Filters
                     </Text>
                     <Select
-                        label="Category"
-                        placeholder="Select category"
+                        label="Post Location"
+                        placeholder="Select a location"
                         data={[
-                            { value: 'landscape', label: 'Landscape' },
-                            { value: 'portrait', label: 'Portrait' },
-                            { value: 'abstract', label: 'Abstract' },
+                            { value: '#BSLTfire01', label: 'Riparian zone' },
+                            { value: '#BSLTfire02', label: 'Redwood & tanoak habitat' },
+                            { value: '#BSLTfire03', label: 'Upland redwood & tanoak habitat' },
+                            { value: '#BSLTfire04', label: 'Grassland habitat' },
+                            { value: '#BSLTfire05', label: 'Chaparral habitat' },
                         ]}
                         value={filter}
                         onChange={setFilter}
                     />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <Select
+                            label="Start Month"
+                            placeholder="Select month"
+                            data={[
+                                { value: '1', label: 'January' },
+                                { value: '2', label: 'February' },
+                                { value: '3', label: 'March' },
+                                { value: '4', label: 'April' },
+                                { value: '5', label: 'May' },
+                                { value: '6', label: 'June' },
+                                { value: '7', label: 'July' },
+                                { value: '8', label: 'August' },
+                                { value: '9', label: 'September' },
+                                { value: '10', label: 'October' },
+                                { value: '11', label: 'November' },
+                                { value: '12', label: 'December' },
+                            ]}
+                            value={startMonth}
+                            onChange={setStartMonth}
+                        />
+                        <Select
+                            label="Start Year"
+                            placeholder="Select year"
+                            data={[
+                                { value: '2022', label: '2022' },
+                                { value: '2023', label: '2023' },
+                                { value: '2024', label: '2024' },
+                            ]}
+                            value={startYear}
+                            onChange={setStartYear}
+                        />
+                        <Text style={{ fontSize: '1rem', fontWeight: 'bold' }}>-</Text>
+                        <Select
+                            label="End Month"
+                            placeholder="Select month"
+                            data={[
+                                { value: '1', label: 'January' },
+                                { value: '2', label: 'February' },
+                                { value: '3', label: 'March' },
+                                { value: '4', label: 'April' },
+                                { value: '5', label: 'May' },
+                                { value: '6', label: 'June' },
+                                { value: '7', label: 'July' },
+                                { value: '8', label: 'August' },
+                                { value: '9', label: 'September' },
+                                { value: '10', label: 'October' },
+                                { value: '11', label: 'November' },
+                                { value: '12', label: 'December' },
+                            ]}
+                            value={endMonth}
+                            onChange={setEndMonth}
+                        />
+                        <Select
+                            label="End Year"
+                            placeholder="Select year"
+                            data={[
+                                { value: '2022', label: '2022' },
+                                { value: '2023', label: '2023' },
+                                { value: '2024', label: '2024' },
+                            ]}
+                            value={endYear}
+                            onChange={setEndYear}
+                        />
+                    </div>
                     <Button
                         mt="md"
                         fullWidth
                         variant="outline"
-                        onClick={() => setFilter(null)}
+                        onClick={() => {
+                            setStartMonth(null);
+                            setStartYear(null);
+                            setEndMonth(null);
+                            setEndYear(null);
+                        }}
                     >
-                        Clear Filters
+                        Clear Date Range
                     </Button>
+                    <RangeSlider
+                        label={(value) => {
+                            const hours = Math.floor(value / 60);
+                            const minutes = value % 60;
+                            const period = hours < 12 ? 'AM' : 'PM';
+                            const formattedHours = hours % 12 || 12; // Convert 0 to 12
+                            const formattedMinutes = minutes.toString().padStart(2, '0');
+                            return `${formattedHours}:${formattedMinutes} ${period}`;
+                        }}
+                        marks={[
+                            { value: 0, label: '12:00 AM' },
+                            { value: 360, label: '6:00 AM' },
+                            { value: 720, label: '12:00 PM' },
+                            { value: 1080, label: '6:00 PM' },
+                            { value: 1439, label: '11:59 PM' },
+                        ]}
+                        min={0}
+                        max={1439}
+                        step={15} // Increment in 15-minute intervals
+                        defaultValue={[360, 1080]} // Default to 6:00 AM - 6:00 PM
+                        onChange={(value) => {
+                            const [start, end] = value;
+                            console.log('Start time in minutes:', start, 'End time in minutes:', end);
+                        }}
+                    />
+
                 </Paper>
             </Grid.Col>
 
@@ -106,8 +213,8 @@ export default function PhotoGrid() {
                                 shadow="md"
                                 radius="md"
                                 style={{
-                                    height: '350px', // Standardized height for all items
-                                    width: '100%', // Full width for responsive layout
+                                    height: '450px',
+                                    width: '100%',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
@@ -119,7 +226,7 @@ export default function PhotoGrid() {
                                 <div
                                     style={{
                                         width: '100%',
-                                        height: '70%', // Allocate 70% of the container for the image
+                                        height: '70%',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -127,7 +234,7 @@ export default function PhotoGrid() {
                                 >
                                     <Image
                                         style={{
-                                            objectFit: 'contain', // Ensures the full image is visible
+                                            objectFit: 'contain',
                                             maxWidth: '100%',
                                             maxHeight: '100%',
                                         }}
@@ -135,12 +242,9 @@ export default function PhotoGrid() {
                                         alt={`Photo ${index + 1}`}
                                     />
                                 </div>
-                                <Text>
-                                    {`Uploader name: ${photo.uploaderName || '[NAME]'}`}
-                                </Text>
-                                <Text>
-                                    {`Resolution: ${photo.width} x ${photo.height}`}
-                                </Text>
+                                <Text>{`Uploader name: ${photo.uploaderName || '[NAME]'}`}</Text>
+                                <Text>{`Location: ${photo.location || '[NAME]'}`}</Text>
+                                <Text>{`Resolution: ${photo.width} x ${photo.height}`}</Text>
                                 <Group>
                                     <Button color="red" onClick={() => handleDelete(photo.id)}>
                                         Delete

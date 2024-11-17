@@ -21,8 +21,10 @@
   },
   "dependencies": {
     "@mantine/core": "7.6.1",
+    "@mantine/dates": "^7.14.1",
     "@mantine/hooks": "7.6.1",
     "@next/bundle-analyzer": "^14.1.3",
+    "@nextui-org/react": "^2.4.8",
     "@tabler/icons-react": "^3.0.0",
     "next": "14.1.3",
     "react": "18.2.0",
