@@ -19,10 +19,11 @@ export default function PhotoGrid() {
     useEffect(() => {
         const fetchPhotos = async () => {
             try {
-                const response = await fetch('http://localhost:5000/images');
+                const response = await fetch('https://fire-recovery-monitoring-backend.vercel.app/images');
                 const data = await response.json();
                 if (Array.isArray(data)) {
                     setPhotos(data);
+                    console.log(data)
                 } else {
                     console.error('Error: Expected an array, but received', typeof data);
                 }
@@ -37,7 +38,7 @@ export default function PhotoGrid() {
 
     const handleDelete = async (photoId: number) => {
         try {
-            const response = await fetch(`http://localhost:5000/images/${photoId}`, {
+            const response = await fetch(`https://fire-recovery-monitoring-backend.vercel.app/images/${photoId}`, {
                 method: 'DELETE',
             });
 
@@ -73,7 +74,14 @@ export default function PhotoGrid() {
         <Grid>
             {/* Sidebar */}
             <Grid.Col span={3}>
-                <Paper withBorder style={{ padding: '1rem', boxShadow: 'sm', height: '100vh' }}>
+                <Paper
+                    withBorder
+                    style={{
+                        padding: '2rem', // Increased padding for more space
+                        boxShadow: 'sm',
+                        height: '100vh',
+                    }}
+                >
                     <Text size="lg" mb="sm" style={{ fontWeight: 500 }}>
                         Filters
                     </Text>
@@ -81,16 +89,16 @@ export default function PhotoGrid() {
                         label="Post Location"
                         placeholder="Select a location"
                         data={[
-                            { value: '#BSLTfire01', label: 'Riparian zone' },
-                            { value: '#BSLTfire02', label: 'Redwood & tanoak habitat' },
-                            { value: '#BSLTfire03', label: 'Upland redwood & tanoak habitat' },
-                            { value: '#BSLTfire04', label: 'Grassland habitat' },
-                            { value: '#BSLTfire05', label: 'Chaparral habitat' },
+                            { value: '#BSLTfire01', label: '#BSLTfire01 Riparian zone' },
+                            { value: '#BSLTfire02', label: '#BSLTfire02 Redwood & tanoak habitat' },
+                            { value: '#BSLTfire03', label: '#BSLTfire03 Upland redwood & tanoak habitat' },
+                            { value: '#BSLTfire04', label: '#BSLTfire04 Grassland habitat' },
+                            { value: '#BSLTfire05', label: '#BSLTfire05 Chaparral habitat' },
                         ]}
                         value={filter}
                         onChange={setFilter}
                     />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', marginBottom: '1rem' }}>
                         <Select
                             label="Start Month"
                             placeholder="Select month"
@@ -155,20 +163,8 @@ export default function PhotoGrid() {
                             onChange={setEndYear}
                         />
                     </div>
-                    <Button
-                        mt="md"
-                        fullWidth
-                        variant="outline"
-                        onClick={() => {
-                            setStartMonth(null);
-                            setStartYear(null);
-                            setEndMonth(null);
-                            setEndYear(null);
-                        }}
-                    >
-                        Clear Date Range
-                    </Button>
                     <RangeSlider
+                        style={{ marginTop: '2rem', marginBottom: '2rem',  marginRight: '1rem',  marginLeft: '1rem' }}
                         label={(value) => {
                             const hours = Math.floor(value / 60);
                             const minutes = value % 60;
@@ -193,21 +189,44 @@ export default function PhotoGrid() {
                             console.log('Start time in minutes:', start, 'End time in minutes:', end);
                         }}
                     />
-
+                    <Button
+                        mt="md"
+                        fullWidth
+                        variant="outline"
+                        onClick={() => {
+                            setStartMonth(null);
+                            setStartYear(null);
+                            setEndMonth(null);
+                            setEndYear(null);
+                        }}
+                    >
+                        Clear Date Range
+                    </Button>
                 </Paper>
             </Grid.Col>
 
             {/* Main Content */}
             <Grid.Col span={9}>
-                <Grid gutter="lg" columns={12}>
-                    {filteredPhotos.map((photo, index) => (
+            <Grid gutter="lg" columns={12}>
+                {filteredPhotos.map((photo, index) => {
+                    // Parse the datetime field into a JavaScript Date object
+                    const parsedDate = new Date(photo.datetime);
+                    
+                    // Format the date as MM/DD/YYYY
+                    const formattedDate = `Date: ${parsedDate.getMonth() + 1}/${parsedDate.getDate()}/${parsedDate.getFullYear()}`;
+                    
+                    // Format the time as h:mm am/pm
+                    const hours = parsedDate.getHours();
+                    const minutes = parsedDate.getMinutes().toString().padStart(2, '0');
+                    const period = hours < 12 ? 'am' : 'pm';
+                    const formattedHours = hours % 12 || 12; // Convert 0 to 12 for 12-hour format
+                    const formattedTime = `Time: ${formattedHours}:${minutes} ${period}`;
+
+                    return (
                         <Grid.Col
                             key={index}
-                            span={
-                                isLargeScreen ? 3 : isMediumScreen ? 4 : isSmallScreen ? 6 : 12
-                            }
+                            span={isLargeScreen ? 3 : isMediumScreen ? 4 : isSmallScreen ? 6 : 12}
                         >
-                            {/* Paper provides the box around each item */}
                             <Paper
                                 withBorder
                                 shadow="md"
@@ -223,6 +242,7 @@ export default function PhotoGrid() {
                                     gap: '0.5rem',
                                 }}
                             >
+                                {/* Image Section */}
                                 <div
                                     style={{
                                         width: '100%',
@@ -242,19 +262,41 @@ export default function PhotoGrid() {
                                         alt={`Photo ${index + 1}`}
                                     />
                                 </div>
-                                <Text>{`Uploader name: ${photo.uploaderName || '[NAME]'}`}</Text>
-                                <Text>{`Location: ${photo.location || '[NAME]'}`}</Text>
-                                <Text>{`Resolution: ${photo.width} x ${photo.height}`}</Text>
-                                <Group>
-                                    <Button color="red" onClick={() => handleDelete(photo.id)}>
+
+                                {/* Information and Delete Section */}
+                                <div
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        paddingTop: '0.5rem',
+                                    }}
+                                >
+                                    {/* Left Side Information */}
+                                    <div style={{ textAlign: 'left' }}>
+                                        {/* <Text weight={700}>{photo.location || '[Location]'}</Text> */}
+                                        <Text color="dimmed" size="sm">{formattedDate}</Text>
+                                        <Text color="dimmed" size="sm">{formattedTime}</Text>
+                                        <Text size="sm">{`Resolution: ${photo.width || 'N/A'} x ${photo.height || 'N/A'}`}</Text>
+                                        <Text size="sm">{`Uploader: ${photo.uploaderName || '[Uploader]'}`}</Text>
+                                    </div>
+
+                                    {/* Right Side Delete Button */}
+                                    <Button
+                                        color="red"
+                                        onClick={() => handleDelete(photo.id)}
+                                        size="sm"
+                                    >
                                         Delete
                                     </Button>
-                                </Group>
+                                </div>
                             </Paper>
                         </Grid.Col>
-                    ))}
-                </Grid>
-            </Grid.Col>
+                    );
+                })}
+            </Grid>
+        </Grid.Col>
         </Grid>
     );
 }
