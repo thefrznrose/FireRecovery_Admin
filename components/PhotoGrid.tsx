@@ -9,11 +9,11 @@ export default function PhotoGrid() {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const pageSize = 8; // Number of images to fetch per page
-
     const [startMonth, setStartMonth] = useState<string | null>(null);
     const [startYear, setStartYear] = useState<string | null>(null);
     const [endMonth, setEndMonth] = useState<string | null>(null);
     const [endYear, setEndYear] = useState<string | null>(null);
+    const [uniqueLocations, setUniqueLocations] = useState<{ value: string; label: string }[]>([]);
     const [selectedPhoto, setSelectedPhoto] = useState<{
         image: string;
         location?: string;
@@ -47,7 +47,20 @@ export default function PhotoGrid() {
             const data = await response.json();
 
             if (Array.isArray(data)) {
+                // Combine new photos with existing ones
                 setPhotos((prevPhotos) => [...prevPhotos, ...data]);
+
+                // Extract unique locations
+                const locations = [...new Set(data.map((photo) => photo.location))]
+                    .filter((loc) => loc) // Filter out null or undefined locations
+                    .map((loc) => ({ value: loc, label: loc }));
+                
+                setUniqueLocations((prevLocations) => {
+                    const existingValues = prevLocations.map((loc) => loc.value);
+                    const newLocations = locations.filter((loc) => !existingValues.includes(loc.value));
+                    return [...prevLocations, ...newLocations];
+                });
+
                 if (data.length < pageSize) setHasMore(false);
             } else {
                 console.error('Unexpected response format');
@@ -59,7 +72,6 @@ export default function PhotoGrid() {
             setLoading(false);
         }
     };
-
     // Trigger fetchPhotos when `page` changes
     useEffect(() => {
         if (hasMore) {
@@ -153,8 +165,11 @@ export default function PhotoGrid() {
     };
 
     const filteredPhotos = filter
-        ? photos.filter((photo) => photo.category === filter)
+        ? photos.filter((photo) => photo.location === filter)
         : photos;
+    console.log('Photo locations:', photos.map((photo) => photo.location));
+    console.log(filter)
+
 
     return (
         <>
@@ -175,18 +190,12 @@ export default function PhotoGrid() {
                         Filters
                     </Text>
                     <Select
-                        label="Post Location"
-                        placeholder="Select a location"
-                        data={[
-                            { value: '#BSLTfire01', label: '#BSLTfire01 Riparian zone' },
-                            { value: '#BSLTfire02', label: '#BSLTfire02 Redwood & tanoak habitat' },
-                            { value: '#BSLTfire03', label: '#BSLTfire03 Upland redwood & tanoak habitat' },
-                            { value: '#BSLTfire04', label: '#BSLTfire04 Grassland habitat' },
-                            { value: '#BSLTfire05', label: '#BSLTfire05 Chaparral habitat' },
-                        ]}
-                        value={filter}
-                        onChange={setFilter}
-                    />
+                            label="Post Location"
+                            placeholder="Select a location"
+                            data={uniqueLocations} // Use dynamically generated locations
+                            value={filter}
+                            onChange={setFilter}
+                        />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', marginBottom: '1rem' }}>
                         <Select
                             label="Start Month"
@@ -441,8 +450,8 @@ export default function PhotoGrid() {
                 src={`data:image/jpeg;base64,${selectedPhoto}`}
                 alt="Full-Resolution Photo"
                 style={{
-                    maxHeight: '90vh', // Adjust max height to leave space for title and close button
-                    maxWidth: '90vw', // Adjust max width
+                    maxHeight: '100vh', // Adjust max height to leave space for title and close button
+                    maxWidth: '100vw', // Adjust max width
                     // objectFit: 'contain', // Ensure the image fits properly
                     // cursor: 'zoom-in'
                 }}

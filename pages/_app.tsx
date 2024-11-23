@@ -3,10 +3,12 @@ import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { MantineProvider } from '@mantine/core';
 import { theme } from '../theme';
+import { SessionProvider } from 'next-auth/react';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <MantineProvider theme={theme}>
+    <SessionProvider session={pageProps.session}>
+      <MantineProvider theme={theme}>
       <Head>
         <title>Mantine Template</title>
         <meta
@@ -17,5 +19,7 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       <Component {...pageProps} />
     </MantineProvider>
+    </SessionProvider>
+
   );
 }

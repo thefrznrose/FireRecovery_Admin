@@ -1,8 +1,9 @@
-import { Image, Stack, Text, Flex } from '@mantine/core';
 import { useRouter } from 'next/router';
-import PhotoUploadButton from '@/components/PhotoUpload/PhotoUploadButton';
 import { useMediaQuery } from '@mantine/hooks';
 import PhotoGrid from '@/components/PhotoGrid';
+import Google from 'next-auth/providers/google';
+import LoginButton from '@/components/LoginButton';
+import LoginForm from '@/components/LoginForm';
 
 export default function HomePage() {
   const router = useRouter();
@@ -14,7 +15,9 @@ export default function HomePage() {
 
   return (
     <>
-      <PhotoGrid/>
+      {/* <PhotoGrid/> */}
+      {/* <LoginButton/> */}
+      <LoginForm/>
     </>
   );
 }
