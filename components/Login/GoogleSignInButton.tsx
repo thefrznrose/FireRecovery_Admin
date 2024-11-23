@@ -1,3 +1,4 @@
+import { signIn } from "next-auth/react";
 import { useEffect } from "react";
 
 const GoogleSignInButton = () => {
@@ -5,21 +6,11 @@ const GoogleSignInButton = () => {
     const handleCredentialResponse = (response: any) => {
       console.log("Encoded JWT ID token: ", response.credential);
 
-      // Send the token to your backend for verification
-      fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: response.credential }),
-      })
-        .then((res) => res.json())
-        .then((data) => console.log("User authenticated:", data))
-        .catch((error) => console.error("Authentication error:", error));
+      // Pass the Google credential to NextAuth
+      signIn("credentials", { credential: response.credential });
     };
 
-    // Expose the callback globally
-    (window as any).handleCredentialResponse = handleCredentialResponse;
-
-    // Initialize the Google Sign-In button
+    // Initialize Google Identity Services
     if (window.google) {
       window.google.accounts.id.initialize({
         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,

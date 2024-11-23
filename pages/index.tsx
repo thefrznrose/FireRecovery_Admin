@@ -1,9 +1,7 @@
 import { useRouter } from 'next/router';
 import { useMediaQuery } from '@mantine/hooks';
+import LoginForm from '@/components/Login/LoginForm';
 import PhotoGrid from '@/components/PhotoGrid';
-import Google from 'next-auth/providers/google';
-import LoginButton from '@/components/LoginButton';
-import LoginForm from '@/components/LoginForm';
 
 export default function HomePage() {
   const router = useRouter();
@@ -18,6 +16,7 @@ export default function HomePage() {
       {/* <PhotoGrid/> */}
       {/* <LoginButton/> */}
       <LoginForm/>
+      <PhotoGrid/>
     </>
   );
 }
