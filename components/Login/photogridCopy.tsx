@@ -247,11 +247,11 @@ export default function PhotoGrid() {
                                 onClick={() => handleImageClick(photo.id)} // Pass photo ID to fetch full-resolution image
                             >
                                     <img
-                                    src={photo.thumbnailLink}
-                                    alt={photo.name}
-                                    
-                                    // placeholder={<Text>Loading Image...</Text>}
-                                    />
+                                        src={photo.thumbnailLink}
+                                        alt={photo.name}
+                                        
+                                        // placeholder={<Text>Loading Image...</Text>}
+                                        />
                             </div>
                             {/* Information and Delete Section */}
                             <div
