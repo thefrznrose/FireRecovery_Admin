@@ -5,10 +5,15 @@ const GoogleSignInButton = () => {
   useEffect(() => {
     const handleCredentialResponse = (response: any) => {
       console.log("Encoded JWT ID token: ", response.credential);
-
-      // Pass the Google credential to NextAuth
-      signIn("credentials", { credential: response.credential });
+      if (!response.credential) {
+        console.error("Google Credential missing");
+        return;
+      }
+      signIn("credentials", { credential: response.credential, redirect: false })
+        .then((res) => console.log("Sign-in response:", res))
+        .catch((err) => console.error("Sign-in error:", err));
     };
+    
 
     // Initialize Google Identity Services
     if (window.google) {
