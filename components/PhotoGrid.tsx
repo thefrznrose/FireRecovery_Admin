@@ -222,14 +222,23 @@ export default function PhotoGrid() {
               >
                 {/* Image Section */}
                 <div style={{ textAlign: "center" }}>
-                <img
-                                    src={photo.thumbnailLink}
-                                    alt={photo.name}
-                                    
-                                    // placeholder={<Text>Loading Image...</Text>}
-                                    />
+                <Image
+                  src={photo.thumbnailLink}
+                  alt={photo.name}
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "200px",
+                    objectFit: "contain",
+                  }}
+                  onError={(e) => {
+                    console.error(`Error loading image: ${photo.thumbnailLink}`);
+                    e.currentTarget.src = photo.thumbnailLink; // Fallback image
+                    setTimeout(() => {
+                      
+                    }, 1000);
+                  }}
+                />
                 </div>
-
                 {/* Information Section */}
                 <div>
                   <Text size="sm">{`Location: ${photo.location || 'N/A'}`}</Text>

@@ -15,7 +15,7 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleLogin} className={styles.form}>
-      <input
+      {/* <input
         type="email"
         placeholder="Email"
         value={email}
@@ -29,7 +29,7 @@ const LoginForm = () => {
         onChange={(e) => setPassword(e.target.value)}
         className={styles.input}
       />
-      <button type="submit" className={styles.button}>Login</button>
+      <button type="submit" className={styles.button}>Login</button> */}
       <GoogleSignInButton/>
     </form>
   );
