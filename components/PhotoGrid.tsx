@@ -1,9 +1,10 @@
 
 import { useEffect, useState } from "react";
-import { Grid, Image, Loader, Text, Button, Paper, Select, Modal, Divider } from "@mantine/core";
+import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider } from "@mantine/core";
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
+import Image from "next/image"; // Import Next.js Image component
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
@@ -180,7 +181,7 @@ export default function PhotoGrid() {
               top: 0,
             }}
           >
-              {session ? (
+              {/* {session ? (
               <div>
                 <Text size="md" style={{ fontWeight: 500 }}>
                   Logged in as:
@@ -190,9 +191,9 @@ export default function PhotoGrid() {
                   {session.user?.email || "No email provided"}
                 </Text>
               </div>
-            ) : (
+            ) : ( */}
               <GoogleSignInButton />
-            )}
+            {/* )} */}
             <Divider my="md" />
             <Text size="lg" mb="sm" style={{ fontWeight: 500 }}>
               Filters
@@ -249,23 +250,19 @@ export default function PhotoGrid() {
                 }}
               >
                 {/* Image Section */}
-                <div style={{ textAlign: "center", flex: 1 }}>
-          <img
-            src={`${photo.thumbnailLink}?timestamp=${Date.now()}`}
-
-            alt={photo.name}
-            style={{
-              width: "100%", // Allow image to fill width
-              height: "100%", // Allow image to fill height
-              objectFit: "contain", // Maintain aspect ratio while filling space
-              // borderRadius: "8px", // Optional: rounded corners for better aesthetics
-            }}
-            onError={(e) => {
-              console.error(`Error loading image: ${photo.thumbnailLink}?timestamp=${Date.now()}`);
-              e.currentTarget.src = photo.thumbnailLink; // Replace with a fallback URL
-            }}
-          />
-        </div>
+                <div style={{ position: "relative", width: "100%", height: "300px" }}>
+                  <Image
+                    src={`${photo.thumbnailLink}`}
+                    alt={photo.name}
+                    fill
+                    style={{
+                      objectFit: "contain", // Ensures the image fits while maintaining aspect ratio
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.src = photo.thumbnailLink; // Fallback handling
+                    }}
+                  />
+                </div>
                 {/* Information Section */}
                 <div>
                   <Text size="sm">
