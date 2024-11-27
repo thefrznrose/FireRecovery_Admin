@@ -30,7 +30,7 @@ const LoginForm = () => {
         className={styles.input}
       />
       <button type="submit" className={styles.button}>Login</button> */}
-      <GoogleSignInButton/>
+
     </form>
   );
 };

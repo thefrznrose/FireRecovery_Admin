@@ -10,12 +10,12 @@ export default function App({ Component, pageProps }: AppProps) {
     <SessionProvider session={pageProps.session}>
       <MantineProvider theme={theme}>
       <Head>
-        <title>Mantine Template</title>
+        <title>BSLT Fire Recovery Monitoring</title>
         <meta
           name="viewport"
           content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
         />
-        <link rel="shortcut icon" href="/favicon.svg" />
+        <link rel="shortcut icon" href="/BSLTLogo.png" />
       </Head>
       <Component {...pageProps} />
     </MantineProvider>

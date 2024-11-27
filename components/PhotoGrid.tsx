@@ -1,8 +1,9 @@
 
 import { useEffect, useState } from "react";
-import { Grid, Image, Loader, Text, Button, Paper, Select, Modal } from "@mantine/core";
+import { Grid, Image, Loader, Text, Button, Paper, Select, Modal, Divider } from "@mantine/core";
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
+import GoogleSignInButton from "./Login/GoogleSignInButton";
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
@@ -51,15 +52,22 @@ export default function PhotoGrid() {
 
   const createPicker = () => {
     if (!session?.accessToken) return;
-
+  
     const picker = new window.google.picker.PickerBuilder()
-      .addView(new window.google.picker.DocsView())
+      .addView(
+        new window.google.picker.DocsView()
+          .setIncludeFolders(false) // Exclude folders
+          .setMimeTypes("application/vnd.google-apps.spreadsheet") // Restrict to Google Sheets
+          .setSelectFolderEnabled(false) // Disable folder selection
+      )
       .setOAuthToken(session.accessToken)
       .setDeveloperKey(process.env.NEXT_PUBLIC_GOOGLE_API_KEY!)
       .setCallback(handlePickerResponse)
       .build();
+  
     picker.setVisible(true);
   };
+  
 
   const handlePickerResponse = async (response: any) => {
     if (response.action === "picked") {
@@ -160,6 +168,7 @@ export default function PhotoGrid() {
     <>
       <Grid>
         {/* Sidebar */}
+        
         <Grid.Col span={2.75}>
           <Paper
             withBorder
@@ -171,6 +180,20 @@ export default function PhotoGrid() {
               top: 0,
             }}
           >
+              {session ? (
+              <div>
+                <Text size="md" style={{ fontWeight: 500 }}>
+                  Logged in as:
+                </Text>
+                <Text size="sm">{session.user?.name || "Unknown User"}</Text>
+                <Text size="sm" color="dimmed">
+                  {session.user?.email || "No email provided"}
+                </Text>
+              </div>
+            ) : (
+              <GoogleSignInButton />
+            )}
+            <Divider my="md" />
             <Text size="lg" mb="sm" style={{ fontWeight: 500 }}>
               Filters
             </Text>
@@ -196,7 +219,12 @@ export default function PhotoGrid() {
               value={startYear}
               onChange={setStartYear}
             />
-            <Button onClick={loadPicker}>Load Images</Button>
+            <Button 
+              onClick={loadPicker}
+              style={{marginTop: "20px"}}
+            >
+              Load Images
+            </Button>
           </Paper>
         </Grid.Col>
 
@@ -221,33 +249,42 @@ export default function PhotoGrid() {
                 }}
               >
                 {/* Image Section */}
-                <div style={{ textAlign: "center" }}>
-                <Image
-                  src={photo.thumbnailLink}
-                  alt={photo.name}
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "200px",
-                    objectFit: "contain",
-                  }}
-                  onError={(e) => {
-                    console.error(`Error loading image: ${photo.thumbnailLink}`);
-                    e.currentTarget.src = photo.thumbnailLink; // Fallback image
-                    setTimeout(() => {
-                      
-                    }, 1000);
-                  }}
-                />
-                </div>
+                <div style={{ textAlign: "center", flex: 1 }}>
+          <img
+            src={`${photo.thumbnailLink}?timestamp=${Date.now()}`}
+
+            alt={photo.name}
+            style={{
+              width: "100%", // Allow image to fill width
+              height: "100%", // Allow image to fill height
+              objectFit: "contain", // Maintain aspect ratio while filling space
+              // borderRadius: "8px", // Optional: rounded corners for better aesthetics
+            }}
+            onError={(e) => {
+              console.error(`Error loading image: ${photo.thumbnailLink}?timestamp=${Date.now()}`);
+              e.currentTarget.src = photo.thumbnailLink; // Replace with a fallback URL
+            }}
+          />
+        </div>
                 {/* Information Section */}
                 <div>
-                  <Text size="sm">{`Location: ${photo.location || 'N/A'}`}</Text>
-                  <Text size="sm">{`Uploader: ${photo.uploaderName || 'N/A'}`}</Text>
-                  <Text size="sm">{`Uploaded: ${photo.uploadDate || 'N/A'} at ${
-                    photo.uploadTime || 'N/A'
-                  }`}</Text>
-                  <Text size="sm">{`Timestamp: ${photo.timestamp || 'N/A'}`}</Text>
-                  <Button onClick={() => handleImageClick(photo)}>View</Button>
+                  <Text size="sm">
+                    <strong>Location:</strong> {photo.location || 'N/A'}
+                  </Text>
+                  <Text size="sm">
+                    <strong>Uploader:</strong> {photo.uploaderName || 'N/A'}
+                  </Text>
+                  <Text size="sm">
+                    <strong>Uploaded:</strong> {photo.uploadDate || 'N/A'} at {photo.uploadTime || 'N/A'}
+                  </Text>
+                  <Text size="sm">
+                    <strong>Timestamp:</strong> {photo.timestamp || 'N/A'}
+                  </Text>
+                  <Button
+                    onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
+                  >
+                    View
+                  </Button>
                 </div>
               </Paper>
             </Grid.Col>
