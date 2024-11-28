@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider, RangeSlider } from "@mantine/core";
+import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider, RangeSlider, TextInput, Checkbox } from "@mantine/core";
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
@@ -22,6 +22,7 @@ export default function PhotoGrid() {
   const [endYear, setEndYear] = useState<string | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
 
+  const [selectedForTimelapse, setSelectedForTimelapse] = useState<any[]>([]);
 
   const isLargeScreen = useMediaQuery('(min-width: 1200px)');
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
@@ -49,7 +50,7 @@ export default function PhotoGrid() {
       // Wait for the session to be established
       if (!session || !session.accessToken) {
         console.log("Waiting for authentication...");
-        setTimeout(initializeGapiAndFetchSheet, 1000); // Retry after 1 second if session is unavailable
+        setTimeout(initializeGapiAndFetchSheet, 5000); // Retry after 1 second if session is unavailable
         return;
       }
   
@@ -72,7 +73,19 @@ export default function PhotoGrid() {
     initializeGapiAndFetchSheet(); // Start initialization
   }, [session]);
   
-  
+  const handleCheckboxChange = (photo: any) => {
+    setSelectedForTimelapse((prev) => {
+      const isSelected = prev.some((item) => item.timestamp === photo.timestamp);
+      if (isSelected) {
+        // Remove photo if already selected
+        return prev.filter((item) => item.timestamp !== photo.timestamp);
+      } else {
+        // Add photo and re-sort by date/time
+        const updated = [...prev, photo];
+        return updated.sort((a, b) => new Date(a.uploadDate + " " + a.uploadTime).getTime() - new Date(b.uploadDate + " " + b.uploadTime).getTime());
+      }
+    });
+  };
 
   const deletePhoto = async (photo: any, index: number) => {
     if (!spreadsheetId) {
@@ -163,7 +176,6 @@ export default function PhotoGrid() {
 
   const createPicker = () => {
     if (!session?.accessToken) return;
-  
     const picker = new window.google.picker.PickerBuilder()
       .addView(
         new window.google.picker.DocsView()
@@ -175,18 +187,15 @@ export default function PhotoGrid() {
       .setDeveloperKey(process.env.NEXT_PUBLIC_GOOGLE_API_KEY!)
       .setCallback(handlePickerResponse)
       .build();
-  
     picker.setVisible(true);
   };
   
-
   const handlePickerResponse = async (response: any) => {
     if (response.action === "picked") {
       const selectedItems = response.docs;
       const selectedSheet = selectedItems.find((item: any) =>
         item.mimeType.includes("application/vnd.google-apps.spreadsheet")
       );
-  
       if (selectedSheet) {
         console.log("Selected Google Sheet:", selectedSheet);
         const sheetId = selectedSheet.id;
@@ -297,7 +306,8 @@ export default function PhotoGrid() {
               top: 0,
             }}
           >
-              {/* {session ? (
+              {session ? (
+                
               <div>
                 <Text size="md" style={{ fontWeight: 500 }}>
                   Logged in as:
@@ -306,14 +316,26 @@ export default function PhotoGrid() {
                 <Text size="sm" color="dimmed">
                   {session.user?.email || "No email provided"}
                 </Text>
+                <Button 
+                  onClick={loadPicker}
+                  style={{marginTop: "20px"}}
+                >
+                  Load Images
+                </Button>
+                <GoogleSignInButton />
               </div>
-            ) : ( */}
+            ) : (
               <GoogleSignInButton />
-            {/* )} */}
+            )}
             <Divider my="md" />
-            <Text size="lg" mb="md" style={{ fontWeight: 600 }}>
+            <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
               Filters:
             </Text>
+            <TextInput
+              label="Input label"
+              description="Input description"
+              placeholder="Input placeholder"
+            />
             <Select
               label="Location"
               placeholder="Select location"
@@ -324,65 +346,116 @@ export default function PhotoGrid() {
               onChange={setFilter} // Update filter state
               style={{marginTop: "1rem"}}
             />
-            <Select
-              label="Start Month"
-              placeholder="Select month"
-              data={[
-                { value: "1", label: "January" },
-                { value: "2", label: "February" },
-                { value: "3", label: "March" },
-                { value: "4", label: "April" },
-              ]}
-              value={startMonth}
-              onChange={setStartMonth}
-              style={{marginTop: "1rem"}}
-            />
-            <Select
-              label="Start Year"
-              placeholder="Select year"
-              data={[
-                { value: "2022", label: "2022" },
-                { value: "2023", label: "2023" },
-              ]}
-              value={startYear}
-              onChange={setStartYear}
-              style={{marginTop: "1rem"}}
-            />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', marginBottom: '1rem' }}>
+                <Select
+                  label="Start Month"
+                  placeholder="Select month"
+                  data={[
+                      { value: '1', label: 'January' },
+                      { value: '2', label: 'February' },
+                      { value: '3', label: 'March' },
+                      { value: '4', label: 'April' },
+                      { value: '5', label: 'May' },
+                      { value: '6', label: 'June' },
+                      { value: '7', label: 'July' },
+                      { value: '8', label: 'August' },
+                      { value: '9', label: 'September' },
+                      { value: '10', label: 'October' },
+                      { value: '11', label: 'November' },
+                      { value: '12', label: 'December' },
+                  ]}
+                  value={startMonth}
+                  onChange={setStartMonth}
+                />
+                <Select
+                    label="Start Year"
+                    placeholder="Select year"
+                    data={[
+                        { value: '2022', label: '2022' },
+                        { value: '2023', label: '2023' },
+                        { value: '2024', label: '2024' },
+                    ]}
+                    value={startYear}
+                    onChange={setStartYear}
+                />
+                <Text style={{ fontSize: '1rem', fontWeight: 'bold' }}>-</Text>
+                <Select
+                    label="End Month"
+                    placeholder="Select month"
+                    data={[
+                        { value: '1', label: 'January' },
+                        { value: '2', label: 'February' },
+                        { value: '3', label: 'March' },
+                        { value: '4', label: 'April' },
+                        { value: '5', label: 'May' },
+                        { value: '6', label: 'June' },
+                        { value: '7', label: 'July' },
+                        { value: '8', label: 'August' },
+                        { value: '9', label: 'September' },
+                        { value: '10', label: 'October' },
+                        { value: '11', label: 'November' },
+                        { value: '12', label: 'December' },
+                    ]}
+                    value={endMonth}
+                    onChange={setEndMonth}
+                />
+                <Select
+                    label="End Year"
+                    placeholder="Select year"
+                    data={[
+                        { value: '2022', label: '2022' },
+                        { value: '2023', label: '2023' },
+                        { value: '2024', label: '2024' },
+                    ]}
+                    value={endYear}
+                    onChange={setEndYear}
+                />
+            </div>
             <RangeSlider
-              style={{ marginTop: '2rem', marginBottom: '2rem',  marginRight: '1rem',  marginLeft: '1rem' }}
+              style={{ marginTop: "2rem", marginBottom: "3rem", marginRight: "1rem", marginLeft: "1rem" }}
               label={(value) => {
-                  const hours = Math.floor(value / 60);
-                  const minutes = value % 60;
-                  const period = hours < 12 ? 'AM' : 'PM';
-                  const formattedHours = hours % 12 || 12; // Convert 0 to 12
-                  const formattedMinutes = minutes.toString().padStart(2, '0');
-                  return `${formattedHours}:${formattedMinutes} ${period}`;
+                const hours = Math.floor(value / 60);
+                const minutes = value % 60;
+                const period = hours < 12 ? "AM" : "PM";
+                const formattedHours = hours % 12 || 12; // Convert 0 to 12
+                const formattedMinutes = minutes.toString().padStart(2, "0");
+                return `${formattedHours}:${formattedMinutes} ${period}`;
               }}
               marks={[
-                  { value: 0, label: '12:00 AM' },
-                  { value: 360, label: '6:00 AM' },
-                  { value: 720, label: '12:00 PM' },
-                  { value: 1080, label: '6:00 PM' },
-                  { value: 1439, label: '11:59 PM' },
+                { value: 240, label: "4:00 AM" }, // Start of range
+                { value: 480, label: "8:00 AM" },
+                { value: 720, label: "12:00 PM" },
+                { value: 960, label: "4:00 PM" },
+                { value: 1200, label: "8:00 PM" }, // End of range
               ]}
-              min={0}
-              max={1439}
+              min={240} // 4:00 AM
+              max={1200} // 8:00 PM
               step={15} // Increment in 15-minute intervals
-              defaultValue={[360, 1080]} // Default to 6:00 AM - 6:00 PM
+              defaultValue={[240, 1200]} // Default to the full range
               onChange={(value) => {
-                  const [start, end] = value;
-                  console.log('Start time in minutes:', start, 'End time in minutes:', end);
+                const [start, end] = value;
+                console.log("Start time in minutes:", start, "End time in minutes:", end);
               }}
             />
-            <Button 
-              onClick={loadPicker}
-              style={{marginTop: "20px"}}
-            >
-              Load Images
-            </Button>
+            <Divider my="md" />
+            <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
+              Timelapse:
+            </Text>
+            <Grid gutter="xs" columns={3}>
+              {selectedForTimelapse.map((photo, index) => (
+                <Grid.Col key={index}>
+                  <Image
+                    src={photo.thumbnailLink}
+                    alt={`Timelapse Image ${index}`}
+                    width={50}
+                    height={50}
+                    style={{ borderRadius: "5px" }}
+                  />
+                </Grid.Col>
+              ))}
+            </Grid>
           </Paper>
         </Grid.Col>
-
         {/* Main Content */}
         <Grid.Col span={9}>
           <Grid gutter="lg" columns={12}>
@@ -436,6 +509,7 @@ export default function PhotoGrid() {
                     size="xs"
                     style={{marginTop: "1rem"}}
                     leftSection={<IconEye/>}
+                    color={"limeGreen"} 
                   >
                     View
                   </Button>
@@ -463,6 +537,12 @@ export default function PhotoGrid() {
                     >
                       Delete
                     </Button>
+                    <Checkbox
+                      label="Include in Timelapse"
+                      checked={selectedForTimelapse.some((item) => item.timestamp === photo.timestamp)}
+                      onChange={() => handleCheckboxChange(photo)}
+                      style={{ marginTop: "1rem" }}
+                    />
                 </div>
               </Paper>
             </Grid.Col>
