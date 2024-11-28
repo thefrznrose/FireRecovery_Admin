@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
 import Image from "next/image"; // Import Next.js Image component
+import {IconEye, IconFlag, IconTrash} from "@tabler/icons-react"
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
@@ -19,6 +20,8 @@ export default function PhotoGrid() {
   const [startYear, setStartYear] = useState<string | null>(null);
   const [endMonth, setEndMonth] = useState<string | null>(null);
   const [endYear, setEndYear] = useState<string | null>(null);
+  const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
+
 
   const isLargeScreen = useMediaQuery('(min-width: 1200px)');
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
@@ -36,6 +39,79 @@ export default function PhotoGrid() {
       }, 100);
     }
   }, []);
+
+  const deletePhoto = async (photo: any, index: number) => {
+    if (!spreadsheetId) {
+      console.error("Spreadsheet ID is not defined. Please select a sheet first.");
+      return;
+    }
+  
+    const fileId = extractFileId(photo.fileLink);
+  
+    // Show confirmation dialog
+    const isConfirmed = window.confirm(
+      "Are you sure you want to delete this photo? This action cannot be undone."
+    );
+  
+    if (!isConfirmed) {
+      return;
+    }
+  
+    if (!fileId) {
+      console.error("File ID not found.");
+      return;
+    }
+  
+    setLoading(true);
+  
+    try {
+      // Delete the file from Google Drive
+      const driveResponse = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        }
+      );
+  
+      if (!driveResponse.ok) {
+        const error = await driveResponse.json();
+        console.error("Google Drive API Error:", error);
+        setLoading(false);
+        return;
+      }
+  
+      // Delete the row from the spreadsheet
+      const rowIndex = index + 2; // Spreadsheet rows are 1-indexed and include a header
+      const sheetResponse = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Form Responses 1!A${rowIndex}:F${rowIndex}:clear`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+  
+      if (!sheetResponse.ok) {
+        const error = await sheetResponse.json();
+        console.error("Google Sheets API Error:", error);
+        setLoading(false);
+        return;
+      }
+  
+      // Update the state to remove the deleted photo
+      setPhotos((prevPhotos) => prevPhotos.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
 
   const extractFileId = (url: string) => {
     const match = url.match(/id=([a-zA-Z0-9-_]+)/);
@@ -76,13 +152,15 @@ export default function PhotoGrid() {
       const selectedSheet = selectedItems.find((item: any) =>
         item.mimeType.includes("application/vnd.google-apps.spreadsheet")
       );
-
+  
       if (selectedSheet) {
         console.log("Selected Google Sheet:", selectedSheet);
-        await fetchSheetData(selectedSheet.id);
+        setSpreadsheetId(selectedSheet.id); // Save the selected spreadsheet ID
+        await fetchSheetData(selectedSheet.id); // Fetch data from the selected sheet
       }
     }
   };
+  
 
   const fetchSheetData = async (spreadsheetId: string) => {
     setLoading(true);
@@ -130,7 +208,7 @@ export default function PhotoGrid() {
       photoData.map(async (photo) => {
         const fileId = extractFileId(photo.fileLink);
         if (!fileId) {
-          return { ...photo, thumbnailLink: null };
+          return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Default fallback
         }
   
         try {
@@ -145,20 +223,21 @@ export default function PhotoGrid() {
   
           if (!res.ok) {
             console.error(`Error fetching thumbnail for file ID ${fileId}`);
-            return { ...photo, thumbnailLink: null };
+            return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Fallback on error
           }
   
           const data = await res.json();
-          return { ...photo, thumbnailLink: data.thumbnailLink, name: data.name };
+          return { ...photo, thumbnailLink: data.thumbnailLink || "/fallback-thumbnail.jpg" }; // Fallback if thumbnailLink is null
         } catch (error) {
           console.error(`Error fetching thumbnail for file ID ${fileId}:`, error);
-          return { ...photo, thumbnailLink: null };
+          return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Fallback on exception
         }
       })
     );
   
     return thumbnails;
   };
+  
   
   const handleImageClick = (photo: any) => {
     setSelectedPhoto(photo);
@@ -279,9 +358,36 @@ export default function PhotoGrid() {
                   </Text>
                   <Button
                     onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
+                    size="xs"
+                    style={{marginTop: "1rem"}}
+                    leftSection={<IconEye/>}
                   >
                     View
                   </Button>
+                  <Button
+                      color="yellow"
+                      size="xs"
+                      onClick={() => deletePhoto(photo, index)}
+                      leftSection={<IconFlag />}
+                      style={{
+                        marginTop: "1rem",
+                        marginLeft: "0.5rem"
+                      }}
+                    >
+                      Flag
+                    </Button>
+                  <Button
+                      color="red"
+                      size="xs"
+                      onClick={() => deletePhoto(photo, index)}
+                      leftSection={<IconTrash />}
+                      style={{
+                        marginTop: "1rem",
+                        marginLeft: "0.5rem"
+                      }}
+                    >
+                      Delete
+                    </Button>
                 </div>
               </Paper>
             </Grid.Col>

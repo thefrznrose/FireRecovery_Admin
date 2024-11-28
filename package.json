@@ -26,6 +26,7 @@
     "@next/bundle-analyzer": "^14.1.3",
     "@nextui-org/react": "^2.4.8",
     "@react-oauth/google": "^0.12.1",
+    "@tabler/icons": "^3.22.0",
     "@tabler/icons-react": "^3.0.0",
     "google-auth-library": "^9.15.0",
     "next": "^14.2.18",

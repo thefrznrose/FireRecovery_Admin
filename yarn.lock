@@ -6778,7 +6778,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tabler/icons@npm:3.22.0":
+"@tabler/icons@npm:3.22.0, @tabler/icons@npm:^3.22.0":
   version: 3.22.0
   resolution: "@tabler/icons@npm:3.22.0"
   checksum: 10c0/d46eb2199010509d457e03fd4206c9e47b9ba6a01bc17c94f68a3696028f3320a2f149bbc28bf3af5479219195f609f5a4557ad1b7965bc359ccfb2f5073d026
@@ -12992,6 +12992,7 @@ __metadata:
     "@storybook/nextjs": "npm:^8.0.0"
     "@storybook/react": "npm:^8.0.0"
     "@storybook/testing-library": "npm:^0.2.2"
+    "@tabler/icons": "npm:^3.22.0"
     "@tabler/icons-react": "npm:^3.0.0"
     "@testing-library/dom": "npm:^9.3.4"
     "@testing-library/jest-dom": "npm:^6.4.2"

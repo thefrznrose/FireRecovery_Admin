@@ -8,9 +8,15 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "https://www.googleapis.com/auth/drive.readonly openid profile email",
+          scope: `
+            https://www.googleapis.com/auth/drive
+            https://www.googleapis.com/auth/spreadsheets
+            openid
+            profile
+            email
+          `.replace(/\s+/g, " ").trim(),
         },
-      },
+      },      
     }),
   ],
   callbacks: {
