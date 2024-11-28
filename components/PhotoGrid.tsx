@@ -204,40 +204,40 @@ export default function PhotoGrid() {
   };
   
   const fetchThumbnails = async (photoData: any[]) => {
-    const thumbnails = await Promise.all(
-      photoData.map(async (photo) => {
-        const fileId = extractFileId(photo.fileLink);
-        if (!fileId) {
-          return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Default fallback
-        }
-  
-        try {
-          const res = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${fileId}?fields=thumbnailLink,name`,
-            {
-              headers: {
-                Authorization: `Bearer ${session?.accessToken}`,
-              },
-            }
-          );
-  
-          if (!res.ok) {
-            console.error(`Error fetching thumbnail for file ID ${fileId}`);
-            return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Fallback on error
+  const thumbnails = await Promise.all(
+    photoData.map(async (photo) => {
+      const fileId = extractFileId(photo.fileLink);
+      if (!fileId) {
+        return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Default fallback
+      }
+
+      try {
+        const res = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${fileId}?fields=thumbnailLink,name`,
+          {
+            headers: {
+              Authorization: `Bearer ${session?.accessToken}`,
+            },
           }
-  
-          const data = await res.json();
-          return { ...photo, thumbnailLink: data.thumbnailLink || "/fallback-thumbnail.jpg" }; // Fallback if thumbnailLink is null
-        } catch (error) {
-          console.error(`Error fetching thumbnail for file ID ${fileId}:`, error);
-          return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Fallback on exception
+        );
+
+        if (!res.ok) {
+          console.error(`Error fetching thumbnail for file ID ${fileId}`);
+          return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Fallback on error
         }
-      })
-    );
-  
-    return thumbnails;
-  };
-  
+
+        const data = await res.json();
+        return { ...photo, thumbnailLink: data.thumbnailLink || "/fallback-thumbnail.jpg" }; // Fallback if thumbnailLink is null
+      } catch (error) {
+        console.error(`Error fetching thumbnail for file ID ${fileId}:`, error);
+        return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Fallback on exception
+      }
+    })
+  );
+
+  return thumbnails;
+};
+
   
   const handleImageClick = (photo: any) => {
     setSelectedPhoto(photo);
@@ -298,6 +298,13 @@ export default function PhotoGrid() {
               ]}
               value={startYear}
               onChange={setStartYear}
+            />
+            <Select
+              label="Location"
+              placeholder="Select location"
+              data={photos.map(photo => ({ value: photo.location, label: photo.location })).filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)}
+              value={filter}
+              onChange={setFilter}
             />
             <Button 
               onClick={loadPicker}
