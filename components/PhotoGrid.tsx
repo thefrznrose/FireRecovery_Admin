@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider } from "@mantine/core";
+import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider, RangeSlider } from "@mantine/core";
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
@@ -26,19 +26,53 @@ export default function PhotoGrid() {
   const isLargeScreen = useMediaQuery('(min-width: 1200px)');
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
   const isSmallScreen = useMediaQuery('(min-width: 480px)');
+  
+  const filteredPhotos = filter 
+  ? photos.filter((photo) => photo.location === filter) 
+  : photos;
 
   useEffect(() => {
-    if (window.gapi) {
-      setGapiLoaded(true);
-    } else {
-      const interval = setInterval(() => {
+    const initializeGapiAndFetchSheet = async () => {
+      // Retry until gapi is available
+      const retryGapiLoad = () => {
         if (window.gapi) {
           setGapiLoaded(true);
-          clearInterval(interval);
+        } else {
+          console.log("Retrying gapi load...");
+          setTimeout(retryGapiLoad, 1000); // Retry after 1 second
+          return;
         }
-      }, 100);
-    }
-  }, []);
+      };
+  
+      retryGapiLoad(); // Start retrying gapi load
+  
+      // Wait for the session to be established
+      if (!session || !session.accessToken) {
+        console.log("Waiting for authentication...");
+        setTimeout(initializeGapiAndFetchSheet, 1000); // Retry after 1 second if session is unavailable
+        return;
+      }
+  
+      // Load spreadsheet ID from localStorage
+      const storedSheetId = localStorage.getItem("spreadsheetId");
+      if (storedSheetId) {
+        console.log("Loading spreadsheet:", storedSheetId);
+        setSpreadsheetId(storedSheetId);
+        try {
+          await fetchSheetData(storedSheetId); // Fetch data for the stored sheet
+        } catch (error) {
+          console.error("Error fetching sheet data:", error);
+          setTimeout(initializeGapiAndFetchSheet, 1000); // Retry fetching sheet
+        }
+      } else {
+        console.log("No spreadsheet ID found in localStorage.");
+      }
+    };
+  
+    initializeGapiAndFetchSheet(); // Start initialization
+  }, [session]);
+  
+  
 
   const deletePhoto = async (photo: any, index: number) => {
     if (!spreadsheetId) {
@@ -155,11 +189,14 @@ export default function PhotoGrid() {
   
       if (selectedSheet) {
         console.log("Selected Google Sheet:", selectedSheet);
-        setSpreadsheetId(selectedSheet.id); // Save the selected spreadsheet ID
-        await fetchSheetData(selectedSheet.id); // Fetch data from the selected sheet
+        const sheetId = selectedSheet.id;
+        setSpreadsheetId(sheetId); // Save in state
+        localStorage.setItem("spreadsheetId", sheetId); // Save to localStorage
+        await fetchSheetData(sheetId); // Fetch data from the selected sheet
       }
     }
   };
+  
   
 
   const fetchSheetData = async (spreadsheetId: string) => {
@@ -274,9 +311,19 @@ export default function PhotoGrid() {
               <GoogleSignInButton />
             {/* )} */}
             <Divider my="md" />
-            <Text size="lg" mb="sm" style={{ fontWeight: 500 }}>
-              Filters
+            <Text size="lg" mb="md" style={{ fontWeight: 600 }}>
+              Filters:
             </Text>
+            <Select
+              label="Location"
+              placeholder="Select location"
+              data={photos
+                .map((photo) => ({ value: photo.location, label: photo.location }))
+                .filter((v, i, a) => a.findIndex((t) => t.value === v.value) === i)} // Remove duplicates
+              value={filter}
+              onChange={setFilter} // Update filter state
+              style={{marginTop: "1rem"}}
+            />
             <Select
               label="Start Month"
               placeholder="Select month"
@@ -288,6 +335,7 @@ export default function PhotoGrid() {
               ]}
               value={startMonth}
               onChange={setStartMonth}
+              style={{marginTop: "1rem"}}
             />
             <Select
               label="Start Year"
@@ -298,13 +346,33 @@ export default function PhotoGrid() {
               ]}
               value={startYear}
               onChange={setStartYear}
+              style={{marginTop: "1rem"}}
             />
-            <Select
-              label="Location"
-              placeholder="Select location"
-              data={photos.map(photo => ({ value: photo.location, label: photo.location })).filter((v, i, a) => a.findIndex(t => t.value === v.value) === i)}
-              value={filter}
-              onChange={setFilter}
+            <RangeSlider
+              style={{ marginTop: '2rem', marginBottom: '2rem',  marginRight: '1rem',  marginLeft: '1rem' }}
+              label={(value) => {
+                  const hours = Math.floor(value / 60);
+                  const minutes = value % 60;
+                  const period = hours < 12 ? 'AM' : 'PM';
+                  const formattedHours = hours % 12 || 12; // Convert 0 to 12
+                  const formattedMinutes = minutes.toString().padStart(2, '0');
+                  return `${formattedHours}:${formattedMinutes} ${period}`;
+              }}
+              marks={[
+                  { value: 0, label: '12:00 AM' },
+                  { value: 360, label: '6:00 AM' },
+                  { value: 720, label: '12:00 PM' },
+                  { value: 1080, label: '6:00 PM' },
+                  { value: 1439, label: '11:59 PM' },
+              ]}
+              min={0}
+              max={1439}
+              step={15} // Increment in 15-minute intervals
+              defaultValue={[360, 1080]} // Default to 6:00 AM - 6:00 PM
+              onChange={(value) => {
+                  const [start, end] = value;
+                  console.log('Start time in minutes:', start, 'End time in minutes:', end);
+              }}
             />
             <Button 
               onClick={loadPicker}
@@ -318,7 +386,7 @@ export default function PhotoGrid() {
         {/* Main Content */}
         <Grid.Col span={9}>
           <Grid gutter="lg" columns={12}>
-          {photos.map((photo, index) => (
+          {filteredPhotos.map((photo, index) => (
             <Grid.Col
               key={`${photo.name}-${index}`}
               span={isLargeScreen ? 3 : isMediumScreen ? 4 : isSmallScreen ? 6 : 12}
@@ -336,7 +404,7 @@ export default function PhotoGrid() {
                 }}
               >
                 {/* Image Section */}
-                <div style={{ position: "relative", width: "100%", height: "300px" }}>
+                <div style={{ position: "relative", width: "100%", height: "14rem" }}>
                   <Image
                     src={`${photo.thumbnailLink}`}
                     alt={photo.name}
@@ -358,10 +426,10 @@ export default function PhotoGrid() {
                     <strong>Uploader:</strong> {photo.uploaderName || 'N/A'}
                   </Text>
                   <Text size="sm">
-                    <strong>Uploaded:</strong> {photo.uploadDate || 'N/A'} at {photo.uploadTime || 'N/A'}
+                    <strong>Taken:</strong> {photo.uploadDate || 'N/A'} at {photo.uploadTime || 'N/A'}
                   </Text>
                   <Text size="sm">
-                    <strong>Timestamp:</strong> {photo.timestamp || 'N/A'}
+                    <strong>Uploaded:</strong> {photo.timestamp || 'N/A'}
                   </Text>
                   <Button
                     onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
