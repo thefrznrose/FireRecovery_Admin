@@ -122,7 +122,7 @@ export default function PhotoGrid() {
       setSelectedForTimelapse([]);
     } else {
       // Otherwise, select all photos
-      setSelectedForTimelapse([...filteredPhotos]);
+      setSelectedForTimelapse([...sortedPhotos]);
     }
   };
   
