@@ -5,13 +5,14 @@ import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
 import Image from "next/image"; // Import Next.js Image component
-import {IconClockHour9, IconEye, IconFlag, IconTrash} from "@tabler/icons-react"
+import {IconClockHour9, IconEye, IconFlag, IconTrash, IconLayersIntersect, IconTableImport} from "@tabler/icons-react"
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [gapiLoaded, setGapiLoaded] = useState(false);
+  const [isGoogleAuthenticated, setGoogleAuthenticated] = useState(false); // Track Google authenticationc
   const [filter, setFilter] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -21,6 +22,7 @@ export default function PhotoGrid() {
   const [endMonth, setEndMonth] = useState<string | null>(null);
   const [endYear, setEndYear] = useState<string | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
+  
 
   const [selectedForTimelapse, setSelectedForTimelapse] = useState<any[]>([]);
 
@@ -61,12 +63,15 @@ export default function PhotoGrid() {
         setSpreadsheetId(storedSheetId);
         try {
           await fetchSheetData(storedSheetId); // Fetch data for the stored sheet
+          setGoogleAuthenticated(true)
         } catch (error) {
           console.error("Error fetching sheet data:", error);
+          setGoogleAuthenticated(false)
           setTimeout(initializeGapiAndFetchSheet, 1000); // Retry fetching sheet
         }
       } else {
         console.log("No spreadsheet ID found in localStorage.");
+        setGoogleAuthenticated(true)
       }
     };
   
@@ -314,26 +319,42 @@ export default function PhotoGrid() {
               backgroundColor: "#f9f9f9", // Optional: Light background
             }}
           >
-              {session ? (
+              {session && isGoogleAuthenticated ? (
                 
               <div>
-                <Text size="md" style={{ fontWeight: 500 }}>
-                  Logged in as:
-                </Text>
-                <Text size="sm">{session.user?.name || "Unknown User"}</Text>
-                <Text size="sm" color="dimmed">
-                  {session.user?.email || "No email provided"}
-                </Text>
-                <Button 
-                  onClick={loadPicker}
-                  style={{marginTop: "20px"}}
+                <Flex
+                  // direction={isSmallScreen ? "column" : "row"} // Stack on smaller screens
+                  align={isSmallScreen ? "stretch" : "center"} // Align items based on screen size
+                  justify="space-between"
+                  gap="md"
                 >
-                  Load Images
-                </Button>
-                <GoogleSignInButton />
+                  <div>
+                    <Text size="md" style={{ fontWeight: 500 }}>
+                      Logged in as:
+                    </Text>
+                    <Text size="sm">
+                      {session.user?.name || "Unknown User"}
+                    </Text>
+                    <Text size="sm" color="dimmed">
+                      {session.user?.email || "No email provided"}
+                    </Text>
+                  </div>
+                  <Button 
+                    onClick={loadPicker}
+                    size="sm"
+                    style={{
+                      marginTop: "1rem",
+                      marginLeft: "3rem"
+                    }}
+                    leftSection={<IconTableImport/>}
+                  >
+                    Import Sheet
+                  </Button>
+                </Flex>
+                {/* <GoogleSignInButton /> */}
               </div>
             ) : (
-              <GoogleSignInButton />
+              <GoogleSignInButton setGoogleAuthenticated={setGoogleAuthenticated}/>
             )}
             <Divider my="md" />
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
@@ -460,8 +481,9 @@ export default function PhotoGrid() {
                   color: "#fff",
                   margin: ".5rem"
                 }}
+                leftSection={<IconLayersIntersect/>}
               >
-                Select All Filtered Images
+                Select All
               </Button>
               <Button
                 size="xs"

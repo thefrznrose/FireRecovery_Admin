@@ -1,7 +1,7 @@
 import { signIn } from "next-auth/react";
 import { useEffect } from "react";
 
-const GoogleSignInButton = () => {
+const GoogleSignInButton = ({ setGoogleAuthenticated }: { setGoogleAuthenticated: React.Dispatch<React.SetStateAction<boolean>> }) => {
   useEffect(() => {
     const handleCredentialResponse = (response: any) => {
       console.log("Encoded JWT ID token: ", response.credential);
@@ -10,7 +10,12 @@ const GoogleSignInButton = () => {
         return;
       }
       signIn("credentials", { credential: response.credential, redirect: false })
-        .then((res) => console.log("Sign-in response:", res))
+        .then((res) => {
+          console.log("Sign-in response:", res);
+          if (res?.ok) {
+            setGoogleAuthenticated(true); // Notify the parent component
+          }
+        })
         .catch((err) => console.error("Sign-in error:", err));
     };
     
