@@ -6,6 +6,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
 import Image from "next/image"; // Import Next.js Image component
 import {IconClockHour9, IconEye, IconFlag, IconTrash, IconLayersIntersect, IconTableImport} from "@tabler/icons-react"
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
@@ -22,7 +23,7 @@ export default function PhotoGrid() {
   const [endMonth, setEndMonth] = useState<string | null>(null);
   const [endYear, setEndYear] = useState<string | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
-  
+  const [sortOption, setSortOption] = useState<string | null>("time-desc"); // Default sorting option
 
   const [selectedForTimelapse, setSelectedForTimelapse] = useState<any[]>([]);
 
@@ -33,6 +34,43 @@ export default function PhotoGrid() {
   const filteredPhotos = filter 
   ? photos.filter((photo) => photo.location === filter) 
   : photos;
+
+  const sortedPhotos = [...filteredPhotos].sort((a, b) => {
+    switch (sortOption) {
+      case "time-asc":
+        return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+      case "time-desc":
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      case "location-asc":
+        return (a.location || "").localeCompare(b.location || "");
+      case "location-desc":
+        return (b.location || "").localeCompare(a.location || "");
+      case "uploader-asc":
+        return (a.uploaderName || "").localeCompare(b.uploaderName || "");
+      case "uploader-desc":
+        return (b.uploaderName || "").localeCompare(a.uploaderName || "");
+      default:
+        return 0;
+    }
+  });
+  
+  
+
+  const handleDragEnd = (result: any) => {
+    const { source, destination } = result;
+
+    // If dropped outside the list or in the same position, do nothing
+    if (!destination || source.index === destination.index) {
+      return;
+    }
+
+    // Reorder the array
+    const reorderedItems = Array.from(selectedForTimelapse);
+    const [movedItem] = reorderedItems.splice(source.index, 1);
+    reorderedItems.splice(destination.index, 0, movedItem);
+
+    setSelectedForTimelapse(reorderedItems);
+  };
 
   useEffect(() => {
     const initializeGapiAndFetchSheet = async () => {
@@ -63,7 +101,7 @@ export default function PhotoGrid() {
         setSpreadsheetId(storedSheetId);
         try {
           await fetchSheetData(storedSheetId); // Fetch data for the stored sheet
-          setGoogleAuthenticated(true)
+          // setGoogleAuthenticated(true)
         } catch (error) {
           console.error("Error fetching sheet data:", error);
           setGoogleAuthenticated(false)
@@ -71,7 +109,7 @@ export default function PhotoGrid() {
         }
       } else {
         console.log("No spreadsheet ID found in localStorage.");
-        setGoogleAuthenticated(true)
+        // setGoogleAuthenticated(true)
       }
     };
   
@@ -79,8 +117,15 @@ export default function PhotoGrid() {
   }, [session]);
   
   const handleSelectAll = () => {
-    setSelectedForTimelapse([...filteredPhotos]);
+    if (selectedForTimelapse.length === filteredPhotos.length) {
+      // If all photos are selected, deselect all
+      setSelectedForTimelapse([]);
+    } else {
+      // Otherwise, select all photos
+      setSelectedForTimelapse([...filteredPhotos]);
+    }
   };
+  
 
   const handleCheckboxChange = (photo: any) => {
     setSelectedForTimelapse((prev) => {
@@ -232,8 +277,16 @@ export default function PhotoGrid() {
       );
   
       if (!res.ok) {
+        setGoogleAuthenticated(false);
         const error = await res.json();
         console.error("Google Sheets API Error:", error);
+        return;
+      }
+
+      if (res.status === 401) {
+        console.error("Authentication expired or invalid.");
+        setGoogleAuthenticated(false);
+        setLoading(false);
         return;
       }
   
@@ -252,6 +305,7 @@ export default function PhotoGrid() {
         const photosWithThumbnails = await fetchThumbnails(photoData);
         setPhotos(photosWithThumbnails);
         console.log(photosWithThumbnails)
+        setGoogleAuthenticated(true)
       }
     } catch (error) {
       console.error("Error fetching Google Sheet data:", error);
@@ -360,10 +414,23 @@ export default function PhotoGrid() {
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
               Filters:
             </Text>
-            <TextInput
-              label="Input label"
-              description="Input description"
-              placeholder="Input placeholder"
+            {/* <TextInput
+              label="Search"
+              placeholder="Search for location,"
+            /> */}
+            <Select
+              label="Sort By"
+              placeholder="Select sorting"
+              data={[
+                { value: "time-asc", label: "Taken Time/Date (Oldest First)" },
+                { value: "time-desc", label: "Taken Time/Date (Newest First)" },
+                { value: "location-asc", label: "Location (A-Z)" },
+                { value: "location-desc", label: "Location (Z-A)" },
+                { value: "uploader-asc", label: "Uploader Name (A-Z)" },
+                { value: "uploader-desc", label: "Uploader Name (Z-A)" },
+              ]}
+              value={sortOption}
+              onChange={setSortOption}
             />
             <Select
               label="Location"
@@ -466,6 +533,7 @@ export default function PhotoGrid() {
                 console.log("Start time in minutes:", start, "End time in minutes:", end);
               }}
             />
+            
             <Divider my="md" />
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
               Timelapse:
@@ -479,11 +547,12 @@ export default function PhotoGrid() {
                 style={{
                   marginBottom: "1rem",
                   color: "#fff",
-                  margin: ".5rem"
                 }}
-                leftSection={<IconLayersIntersect/>}
+                leftSection={<IconLayersIntersect />}
               >
-                Select All
+                {selectedForTimelapse.length === filteredPhotos.length
+                  ? "Deselect All"
+                  : "Select All"}
               </Button>
               <Button
                 size="xs"
@@ -491,14 +560,14 @@ export default function PhotoGrid() {
                 style={{
                   marginBottom: "1rem",
                   color: "#fff",
-                  margin: ".5rem"
+                  marginLeft: ".5rem",
                 }}
                 leftSection={<IconClockHour9/>}
               >
-                Generate Timelapse
+                Generate MP4
               </Button>
             </Flex>
-            <Grid
+            {/* <Grid
   style={{
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(100px, 350px))", // Min 100px, Max 350px for responsive scaling
@@ -506,152 +575,136 @@ export default function PhotoGrid() {
     justifyContent: "center", // Center content within the grid
     alignItems: "center", // Vertically align items
   }}
->
-  {selectedForTimelapse.map((photo, index) => (
-    <div
-      key={index}
-      style={{
-        position: "relative", // Enable positioning for the overlay
-        width: "100%",
-        height: "auto",
-        maxWidth: "80px", // Prevents individual items from growing too large
-        aspectRatio: "1", // Maintains square images
-        overflow: "hidden",
-        borderRadius: "5px",
-        margin: "0.1rem",
-      }}
-    >
-      {/* Number Overlay */}
-      <div
-        style={{
-          position: "absolute",
-          top: "5px", // Adjusts the position within the image container
-          left: "5px",
-          width: "20px",
-          height: "20px",
-          backgroundColor: "#1f7a8c", // Circle background color
-          color: "#fff", // Text color
-          borderRadius: "50%", // Ensures a circular shape
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "12px",
-          fontWeight: "bold",
-          zIndex: 2, // Ensures the circle is above the image
-        }}
-      >
-        {index + 1} {/* Number index */}
-      </div>
-      <Image
-        src={photo.thumbnailLink}
-        alt={`Timelapse Image ${index}`}
-        width={100}
-        height={100}
-        style={{
-          objectFit: "cover", // Ensures the image fills its container
-          width: "100%",
-          height: "100%",
-          borderRadius: "5px",
-        }}
-      />
-    </div>
-  ))}
-</Grid>
+> */}
+{/* </Grid> */}
 
           </Paper>
         </Grid.Col>
         {/* Main Content */}
         <Grid.Col span={9}>
-          <Grid gutter="lg" columns={12}>
-          {filteredPhotos.map((photo, index) => (
-            <Grid.Col
-              key={`${photo.name}-${index}`}
-              span={isLargeScreen ? 3 : isMediumScreen ? 4 : isSmallScreen ? 6 : 12}
-            >
-              <Paper
-                withBorder
-                shadow="md"
-                radius="md"
+        <Grid gutter="lg" columns={12}>
+  {sortedPhotos.map((photo, index) => {
+    // Find the index in the timelapse array if selected
+    const timelapseIndex = selectedForTimelapse.findIndex(
+      (item) => item.timestamp === photo.timestamp
+    );
+
+    return (
+      <Grid.Col
+        key={`${photo.name}-${index}`}
+        span={isLargeScreen ? 3 : isMediumScreen ? 4 : isSmallScreen ? 6 : 12}
+      >
+        <Paper
+          withBorder
+          shadow="md"
+          radius="md"
+          style={{
+            height: "450px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            padding: "1rem",
+            position: "relative", // Needed for overlay positioning
+          }}
+        >
+          {timelapseIndex !== -1 && (
+              <div
                 style={{
-                  height: "450px",
+                  position: "absolute",
+                  bottom: ".5rem",
+                  right: ".5rem",
+                  width: "30px",
+                  height: "30px",
+                  backgroundColor: "grey",
+                  color: "#fff",
+                  borderRadius: "50%",
                   display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  padding: "1rem",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  zIndex: 2,
                 }}
               >
-                {/* Image Section */}
-                <div style={{ position: "relative", width: "100%", height: "14rem" }}>
-                  <Image
-                    src={`${photo.thumbnailLink}`}
-                    alt={photo.name}
-                    fill
-                    style={{
-                      objectFit: "contain", // Ensures the image fits while maintaining aspect ratio
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.src = photo.thumbnailLink; // Fallback handling
-                    }}
-                  />
-                </div>
-                {/* Information Section */}
-                <div>
-                  <Text size="sm">
-                    <strong>Location:</strong> {photo.location || 'N/A'}
-                  </Text>
-                  <Text size="sm">
-                    <strong>Uploader:</strong> {photo.uploaderName || 'N/A'}
-                  </Text>
-                  <Text size="sm">
-                    <strong>Taken:</strong> {photo.uploadDate || 'N/A'} at {photo.uploadTime || 'N/A'}
-                  </Text>
-                  <Text size="sm">
-                    <strong>Uploaded:</strong> {photo.timestamp || 'N/A'}
-                  </Text>
-                  <Button
-                    onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
-                    size="xs"
-                    style={{marginTop: "1rem"}}
-                    leftSection={<IconEye/>}
-                    color={"limeGreen"} 
-                  >
-                    View
-                  </Button>
-                  <Button
-                      color="yellow"
-                      size="xs"
-                      onClick={() => deletePhoto(photo, index)}
-                      leftSection={<IconFlag />}
-                      style={{
-                        marginTop: "1rem",
-                        marginLeft: "0.5rem"
-                      }}
-                    >
-                      Flag
-                    </Button>
-                  <Button
-                      color="red"
-                      size="xs"
-                      onClick={() => deletePhoto(photo, index)}
-                      leftSection={<IconTrash />}
-                      style={{
-                        marginTop: "1rem",
-                        marginLeft: "0.5rem"
-                      }}
-                    >
-                      Delete
-                    </Button>
-                    <Checkbox
-                      label="Include in Timelapse"
-                      checked={selectedForTimelapse.some((item) => item.timestamp === photo.timestamp)}
-                      onChange={() => handleCheckboxChange(photo)}
-                      style={{ marginTop: "1rem" }}
-                    />
-                </div>
-              </Paper>
-            </Grid.Col>
-          ))}
-          </Grid>
+                {timelapseIndex + 1}
+              </div>
+            )}
+          {/* Image Section */}
+          <div style={{ position: "relative", width: "100%", height: "14rem" }}>
+            <Image
+              src={`${photo.thumbnailLink}`}
+              alt={photo.name}
+              fill
+              style={{
+                objectFit: "contain", // Ensures the image fits while maintaining aspect ratio
+              }}
+              onError={(e) => {
+                e.currentTarget.src = photo.thumbnailLink; // Fallback handling
+              }}
+            />
+            
+          </div>
+          {/* Information Section */}
+          <div>
+            <Text size="sm">
+              <strong>Location:</strong> {photo.location || "N/A"}
+            </Text>
+            <Text size="sm">
+              <strong>Uploader:</strong> {photo.uploaderName || "N/A"}
+            </Text>
+            <Text size="sm">
+              <strong>Taken:</strong> {photo.uploadDate || "N/A"} at{" "}
+              {photo.uploadTime || "N/A"}
+            </Text>
+            <Text size="sm">
+              <strong>Uploaded:</strong> {photo.timestamp || "N/A"}
+            </Text>
+            <Button
+              onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
+              size="xs"
+              style={{ marginTop: "1rem" }}
+              leftSection={<IconEye />}
+              color={"limeGreen"}
+            >
+              View
+            </Button>
+            <Button
+              color="yellow"
+              size="xs"
+              onClick={() => deletePhoto(photo, index)}
+              leftSection={<IconFlag />}
+              style={{
+                marginTop: "1rem",
+                marginLeft: "0.5rem",
+              }}
+            >
+              Flag
+            </Button>
+            <Button
+              color="red"
+              size="xs"
+              onClick={() => deletePhoto(photo, index)}
+              leftSection={<IconTrash />}
+              style={{
+                marginTop: "1rem",
+                marginLeft: "0.5rem",
+              }}
+            >
+              Delete
+            </Button>
+            <Checkbox
+              label="Include in Timelapse"
+              checked={timelapseIndex !== -1}
+              onChange={() => handleCheckboxChange(photo)}
+              style={{ marginTop: "1rem" }}
+            />
+          </div>
+        </Paper>
+      </Grid.Col>
+    );
+  })}
+</Grid>
+
 
           {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
         </Grid.Col>
