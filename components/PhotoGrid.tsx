@@ -1,11 +1,11 @@
 
 import { useEffect, useState } from "react";
-import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider, RangeSlider, TextInput, Checkbox } from "@mantine/core";
+import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider, RangeSlider, TextInput, Checkbox, Flex } from "@mantine/core";
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
 import Image from "next/image"; // Import Next.js Image component
-import {IconEye, IconFlag, IconTrash} from "@tabler/icons-react"
+import {IconClockHour9, IconEye, IconFlag, IconTrash} from "@tabler/icons-react"
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
@@ -73,16 +73,22 @@ export default function PhotoGrid() {
     initializeGapiAndFetchSheet(); // Start initialization
   }, [session]);
   
+  const handleSelectAll = () => {
+    setSelectedForTimelapse([...filteredPhotos]);
+  };
+
   const handleCheckboxChange = (photo: any) => {
     setSelectedForTimelapse((prev) => {
       const isSelected = prev.some((item) => item.timestamp === photo.timestamp);
       if (isSelected) {
-        // Remove photo if already selected
         return prev.filter((item) => item.timestamp !== photo.timestamp);
       } else {
-        // Add photo and re-sort by date/time
         const updated = [...prev, photo];
-        return updated.sort((a, b) => new Date(a.uploadDate + " " + a.uploadTime).getTime() - new Date(b.uploadDate + " " + b.uploadTime).getTime());
+        return updated.sort(
+          (a, b) =>
+            new Date(a.uploadDate + " " + a.uploadTime).getTime() -
+            new Date(b.uploadDate + " " + b.uploadTime).getTime()
+        );
       }
     });
   };
@@ -301,9 +307,11 @@ export default function PhotoGrid() {
             style={{
               padding: "2rem",
               boxShadow: "sm",
-              height: "100vh",
-              position: "sticky",
+              height: "100vh", // Full viewport height
+              overflowY: "auto", // Enable vertical scrolling
+              position: "sticky", // Keeps sidebar fixed during scroll
               top: 0,
+              backgroundColor: "#f9f9f9", // Optional: Light background
             }}
           >
               {session ? (
@@ -441,19 +449,93 @@ export default function PhotoGrid() {
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
               Timelapse:
             </Text>
-            <Grid gutter="xs" columns={3}>
-              {selectedForTimelapse.map((photo, index) => (
-                <Grid.Col key={index}>
-                  <Image
-                    src={photo.thumbnailLink}
-                    alt={`Timelapse Image ${index}`}
-                    width={50}
-                    height={50}
-                    style={{ borderRadius: "5px" }}
-                  />
-                </Grid.Col>
-              ))}
-            </Grid>
+            <Flex
+            >
+              <Button
+                onClick={handleSelectAll}
+                size="xs"
+                fullWidth
+                style={{
+                  marginBottom: "1rem",
+                  color: "#fff",
+                  margin: ".5rem"
+                }}
+              >
+                Select All Filtered Images
+              </Button>
+              <Button
+                size="xs"
+                fullWidth
+                style={{
+                  marginBottom: "1rem",
+                  color: "#fff",
+                  margin: ".5rem"
+                }}
+                leftSection={<IconClockHour9/>}
+              >
+                Generate Timelapse
+              </Button>
+            </Flex>
+            <Grid
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(100px, 350px))", // Min 100px, Max 350px for responsive scaling
+    gap: "10px",
+    justifyContent: "center", // Center content within the grid
+    alignItems: "center", // Vertically align items
+  }}
+>
+  {selectedForTimelapse.map((photo, index) => (
+    <div
+      key={index}
+      style={{
+        position: "relative", // Enable positioning for the overlay
+        width: "100%",
+        height: "auto",
+        maxWidth: "80px", // Prevents individual items from growing too large
+        aspectRatio: "1", // Maintains square images
+        overflow: "hidden",
+        borderRadius: "5px",
+        margin: "0.1rem",
+      }}
+    >
+      {/* Number Overlay */}
+      <div
+        style={{
+          position: "absolute",
+          top: "5px", // Adjusts the position within the image container
+          left: "5px",
+          width: "20px",
+          height: "20px",
+          backgroundColor: "#1f7a8c", // Circle background color
+          color: "#fff", // Text color
+          borderRadius: "50%", // Ensures a circular shape
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "12px",
+          fontWeight: "bold",
+          zIndex: 2, // Ensures the circle is above the image
+        }}
+      >
+        {index + 1} {/* Number index */}
+      </div>
+      <Image
+        src={photo.thumbnailLink}
+        alt={`Timelapse Image ${index}`}
+        width={100}
+        height={100}
+        style={{
+          objectFit: "cover", // Ensures the image fills its container
+          width: "100%",
+          height: "100%",
+          borderRadius: "5px",
+        }}
+      />
+    </div>
+  ))}
+</Grid>
+
           </Paper>
         </Grid.Col>
         {/* Main Content */}
