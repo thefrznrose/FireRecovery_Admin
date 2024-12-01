@@ -7,6 +7,7 @@ import GoogleSignInButton from "./Login/GoogleSignInButton";
 import Image from "next/image"; // Import Next.js Image component
 import {IconClockHour9, IconEye, IconFlag, IconTrash, IconLayersIntersect, IconTableImport} from "@tabler/icons-react"
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import {DateRangePicker} from "@nextui-org/react";
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
@@ -18,22 +19,104 @@ export default function PhotoGrid() {
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
   const [isModalOpen, setModalOpen] = useState(false);
 
-  const [startMonth, setStartMonth] = useState<string | null>(null);
-  const [startYear, setStartYear] = useState<string | null>(null);
-  const [endMonth, setEndMonth] = useState<string | null>(null);
-  const [endYear, setEndYear] = useState<string | null>(null);
+  const [value, setValue] = useState<[Date, Date]>([new Date(2021, 11, 1), new Date(2021, 11, 5)]);
+  
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<string | null>("time-desc"); // Default sorting option
-
   const [selectedForTimelapse, setSelectedForTimelapse] = useState<any[]>([]);
 
   const isLargeScreen = useMediaQuery('(min-width: 1200px)');
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
   const isSmallScreen = useMediaQuery('(min-width: 480px)');
+
+
+  const [locationFilter, setLocationFilter] = useState<string | null>(null); // Location filter
+  const [startDate, setStartDate] = useState<string>(""); // Start date (dd/mm/yyyy)
+  const [endDate, setEndDate] = useState<string>(""); // End date (dd/mm/yyyy)
+  const [timeRange, setTimeRange] = useState<[number, number]>([240, 1200]); // Time range in minutes (4:00 AM to 8:00 PM)
+
   
-  const filteredPhotos = filter 
-  ? photos.filter((photo) => photo.location === filter) 
-  : photos;
+  const filterPhotos = () => {
+    console.log("Start date input:", startDate);
+    console.log("End date input:", endDate);
+  
+    const start = startDate
+      ? new Date(startDate.split("/").reverse().join("-"))
+      : null;
+    const end = endDate
+      ? new Date(endDate.split("/").reverse().join("-"))
+      : null;
+  
+    if (start) console.log("Parsed start date:", start);
+    if (end) console.log("Parsed end date:", end);
+  
+    return photos.filter((photo) => {
+      const photoDate = new Date(photo.uploadDate.split("/").reverse().join("-"));
+  
+      if (isNaN(photoDate.getTime())) {
+        console.error(`Invalid photo upload date: ${photo.uploadDate}`);
+        return false; // Exclude photos with invalid upload dates
+      }
+  
+      console.log("Photo upload date:", photo.uploadDate);
+      console.log("Parsed photo date:", photoDate);
+  
+      // Convert uploadTime to minutes since midnight for time filtering
+      const timeParts = photo.uploadTime.match(/(\d+):(\d+):(\d+)\s(AM|PM)/);
+      if (!timeParts) {
+        console.error(`Invalid photo upload time: ${photo.uploadTime}`);
+        return false; // Exclude photos with invalid upload times
+      }
+      const hours = parseInt(timeParts[1], 10) % 12 + (timeParts[4] === "PM" ? 12 : 0);
+      const minutes = parseInt(timeParts[2], 10);
+      const photoTimeInMinutes = hours * 60 + minutes;
+  
+      console.log(
+        "Photo time in minutes:",
+        photoTimeInMinutes,
+        "| Time range:",
+        timeRange
+      );
+  
+      // Location filter
+      const matchesLocation =
+        !locationFilter || photo.location === locationFilter;
+      if (!matchesLocation)
+        console.log("Photo excluded by location filter:", photo.location);
+  
+      // Matches date range
+      const matchesDate =
+        (!start || photoDate >= start) && (!end || photoDate <= end);
+      if (!matchesDate)
+        console.log(
+          "Photo excluded by date range filter:",
+          photoDate,
+          "| Start:",
+          start,
+          "| End:",
+          end
+        );
+  
+      // Matches time range
+      const matchesTime =
+        photoTimeInMinutes >= timeRange[0] &&
+        photoTimeInMinutes <= timeRange[1];
+      if (!matchesTime)
+        console.log(
+          "Photo excluded by time range filter:",
+          photoTimeInMinutes
+        );
+  
+      // Combine all filters
+      return matchesLocation && matchesDate;
+    });
+  };
+  
+  
+  
+  
+
+  const filteredPhotos = filterPhotos();
 
   const sortedPhotos = [...filteredPhotos].sort((a, b) => {
     switch (sortOption) {
@@ -433,82 +516,38 @@ export default function PhotoGrid() {
               onChange={setSortOption}
             />
             <Select
-              label="Location"
-              placeholder="Select location"
-              data={photos
-                .map((photo) => ({ value: photo.location, label: photo.location }))
-                .filter((v, i, a) => a.findIndex((t) => t.value === v.value) === i)} // Remove duplicates
-              value={filter}
-              onChange={setFilter} // Update filter state
-              style={{marginTop: "1rem"}}
+            label="Location"
+            placeholder="Select location"
+            data={[
+              ...new Set(photos.map((photo) => photo.location)), // Unique locations
+            ].map((location) => ({ value: location, label: location }))}
+            value={locationFilter}
+            onChange={setLocationFilter}
+            style={{ marginBottom: "1rem" }}
+          />
+          <Flex>
+            <TextInput
+              label="Start Date (mm/dd/yyyy)"
+              placeholder="e.g., 01/01/2024"
+              value={startDate}
+              onChange={(e) => setStartDate(e.currentTarget.value)}
+              // onBlur={filterByDateRange} // Trigger filtering when focus is lost
             />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', marginBottom: '1rem' }}>
-                <Select
-                  label="Start Month"
-                  placeholder="Select month"
-                  data={[
-                      { value: '1', label: 'January' },
-                      { value: '2', label: 'February' },
-                      { value: '3', label: 'March' },
-                      { value: '4', label: 'April' },
-                      { value: '5', label: 'May' },
-                      { value: '6', label: 'June' },
-                      { value: '7', label: 'July' },
-                      { value: '8', label: 'August' },
-                      { value: '9', label: 'September' },
-                      { value: '10', label: 'October' },
-                      { value: '11', label: 'November' },
-                      { value: '12', label: 'December' },
-                  ]}
-                  value={startMonth}
-                  onChange={setStartMonth}
-                />
-                <Select
-                    label="Start Year"
-                    placeholder="Select year"
-                    data={[
-                        { value: '2022', label: '2022' },
-                        { value: '2023', label: '2023' },
-                        { value: '2024', label: '2024' },
-                    ]}
-                    value={startYear}
-                    onChange={setStartYear}
-                />
-                <Text style={{ fontSize: '1rem', fontWeight: 'bold' }}>-</Text>
-                <Select
-                    label="End Month"
-                    placeholder="Select month"
-                    data={[
-                        { value: '1', label: 'January' },
-                        { value: '2', label: 'February' },
-                        { value: '3', label: 'March' },
-                        { value: '4', label: 'April' },
-                        { value: '5', label: 'May' },
-                        { value: '6', label: 'June' },
-                        { value: '7', label: 'July' },
-                        { value: '8', label: 'August' },
-                        { value: '9', label: 'September' },
-                        { value: '10', label: 'October' },
-                        { value: '11', label: 'November' },
-                        { value: '12', label: 'December' },
-                    ]}
-                    value={endMonth}
-                    onChange={setEndMonth}
-                />
-                <Select
-                    label="End Year"
-                    placeholder="Select year"
-                    data={[
-                        { value: '2022', label: '2022' },
-                        { value: '2023', label: '2023' },
-                        { value: '2024', label: '2024' },
-                    ]}
-                    value={endYear}
-                    onChange={setEndYear}
-                />
-            </div>
+
+            <TextInput
+              label="End Date (mm/dd/yyyy)"
+              placeholder="e.g., 31/12/2024"
+              value={endDate}
+              onChange={(e) => setEndDate(e.currentTarget.value)}
+              // onBlur={filterByDateRange} // Trigger filtering when focus is lost
+              
+            />
+          </Flex>
+            <Text size="sm"  style={{ marginBottom: "0.5rem", fontWeight: 500,  marginTop: "1rem" }}>
+              Time of Day:
+            </Text>
             <RangeSlider
-              style={{ marginTop: "2rem", marginBottom: "3rem", marginRight: "1rem", marginLeft: "1rem" }}
+              style={{ marginTop: "1rem", marginBottom: "3rem", marginRight: "1rem", marginLeft: "1rem" }}
               label={(value) => {
                 const hours = Math.floor(value / 60);
                 const minutes = value % 60;
