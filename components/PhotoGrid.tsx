@@ -28,7 +28,7 @@ export default function PhotoGrid() {
   const isLargeScreen = useMediaQuery('(min-width: 1200px)');
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
   const isSmallScreen = useMediaQuery('(min-width: 480px)');
-
+  const [filteredPhotos, setFilteredPhotos] = useState<any[]>([]);
 
   const [locationFilter, setLocationFilter] = useState<string | null>(null); // Location filter
   const [startDate, setStartDate] = useState<string>(""); // Start date (dd/mm/yyyy)
@@ -78,6 +78,16 @@ export default function PhotoGrid() {
         timeRange
       );
   
+      // Log specific comparisons for debugging
+      console.log(
+        `Comparing photo time: ${photoTimeInMinutes} with time range: ${timeRange[0]} - ${timeRange[1]}`
+      );
+      console.log(
+        `Time comparison results: ${
+          photoTimeInMinutes >= timeRange[0]
+        } (start) and ${photoTimeInMinutes <= timeRange[1]} (end)`
+      );
+  
       // Location filter
       const matchesLocation =
         !locationFilter || photo.location === locationFilter;
@@ -101,22 +111,19 @@ export default function PhotoGrid() {
       const matchesTime =
         photoTimeInMinutes >= timeRange[0] &&
         photoTimeInMinutes <= timeRange[1];
+        console.log(photoTimeInMinutes, timeRange)
       if (!matchesTime)
         console.log(
           "Photo excluded by time range filter:",
-          photoTimeInMinutes
+          photoTimeInMinutes,
+          "| Time range:",
+          timeRange
         );
   
       // Combine all filters
-      return matchesLocation && matchesDate;
+      return matchesLocation && matchesDate && matchesTime;
     });
   };
-  
-  
-  
-  
-
-  const filteredPhotos = filterPhotos();
 
   const sortedPhotos = [...filteredPhotos].sort((a, b) => {
     switch (sortOption) {
@@ -154,6 +161,15 @@ export default function PhotoGrid() {
 
     setSelectedForTimelapse(reorderedItems);
   };
+
+  useEffect(() => {
+    // Re-filter photos whenever any filter changes
+    const applyFilters = () => {
+      const results = filterPhotos();
+      setFilteredPhotos(results);
+    };
+    applyFilters();
+  }, [photos, timeRange, startDate, endDate, locationFilter]);
 
   useEffect(() => {
     const initializeGapiAndFetchSheet = async () => {
@@ -567,9 +583,10 @@ export default function PhotoGrid() {
               max={1200} // 8:00 PM
               step={15} // Increment in 15-minute intervals
               defaultValue={[240, 1200]} // Default to the full range
+              value={timeRange} // Controlled value
               onChange={(value) => {
-                const [start, end] = value;
-                console.log("Start time in minutes:", start, "End time in minutes:", end);
+                setTimeRange(value); // Update time range state
+                console.log("Time range updated:", value);
               }}
             />
             
