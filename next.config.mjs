@@ -15,10 +15,20 @@ export default withBundleAnalyzer({
   async headers() {
     return [
       {
-        source: '/:path*', // Apply headers to all routes
+        source: "/(.*)", // Match all routes
         headers: [
-          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
-          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          {
+            key: "Cross-Origin-Embedder-Policy",
+            value: "require-corp", // Enforce COEP
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin", // Protect your origin
+          },
+          {
+            key: "Cross-Origin-Resource-Policy",
+            value: "cross-origin", // Allow resources from any origin
+          },
         ],
       },
     ];
