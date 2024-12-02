@@ -143,24 +143,6 @@ export default function PhotoGrid() {
         return 0;
     }
   });
-  
-  
-
-  const handleDragEnd = (result: any) => {
-    const { source, destination } = result;
-
-    // If dropped outside the list or in the same position, do nothing
-    if (!destination || source.index === destination.index) {
-      return;
-    }
-
-    // Reorder the array
-    const reorderedItems = Array.from(selectedForTimelapse);
-    const [movedItem] = reorderedItems.splice(source.index, 1);
-    reorderedItems.splice(destination.index, 0, movedItem);
-
-    setSelectedForTimelapse(reorderedItems);
-  };
 
   useEffect(() => {
     // Re-filter photos whenever any filter changes
@@ -322,6 +304,8 @@ export default function PhotoGrid() {
 
   const loadPicker = () => {
     if (!gapiLoaded || !session?.accessToken) {
+      console.log("gapi", gapiLoaded)
+      console.log("access token", session?.accessToken)
       console.error("Google Picker API or Access Token not available");
       return;
     }

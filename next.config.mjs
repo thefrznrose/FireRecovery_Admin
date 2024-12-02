@@ -10,24 +10,24 @@ export default withBundleAnalyzer({
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['lh3.googleusercontent.com'], // Add this line
+    domains: ['lh3.googleusercontent.com'], // Allow Google's image domain
   },
   async headers() {
     return [
       {
-        source: "/(.*)", // Match all routes
+        source: "/(.*)", // Apply to all routes
         headers: [
           {
-            key: "Cross-Origin-Embedder-Policy",
-            value: "require-corp", // Enforce COEP
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups", // Allow popups to interact with your app
           },
           {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin", // Protect your origin
+            key: "Cross-Origin-Embedder-Policy",
+            value: "unsafe-none", // Disable embedding restrictions for third-party content
           },
           {
             key: "Cross-Origin-Resource-Policy",
-            value: "cross-origin", // Allow resources from any origin
+            value: "cross-origin", // Allow loading third-party resources
           },
         ],
       },
