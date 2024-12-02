@@ -133,3 +133,4 @@ dist
 
 # Ignore environment files
 .env.local
+.vercel

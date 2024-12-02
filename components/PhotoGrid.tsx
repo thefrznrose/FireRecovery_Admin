@@ -507,7 +507,21 @@ export default function PhotoGrid() {
                 {/* <GoogleSignInButton /> */}
               </div>
             ) : (
-              <GoogleSignInButton setGoogleAuthenticated={setGoogleAuthenticated}/>
+              <>
+              <GoogleSignInButton />
+              <Button 
+                    onClick={loadPicker}
+                    size="sm"
+                    style={{
+                      marginTop: "1rem",
+                      marginLeft: "3rem"
+                    }}
+                    leftSection={<IconTableImport/>}
+                  >
+                    Import Sheet
+                  </Button>
+              </>
+              
             )}
             <Divider my="md" />
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>

@@ -1711,6 +1711,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ffmpeg/core@npm:^0.11.0":
+  version: 0.11.0
+  resolution: "@ffmpeg/core@npm:0.11.0"
+  checksum: 10c0/78d5a5a3fd13ad9340016eb0fd49f0377920e2c7617928d476ece153b773d2338b033aba4e34383382fb0df2e119376cb2741c7d228f9cc35b7bda52fb56f26a
+  languageName: node
+  linkType: hard
+
+"@ffmpeg/ffmpeg@npm:0.9.5":
+  version: 0.9.5
+  resolution: "@ffmpeg/ffmpeg@npm:0.9.5"
+  dependencies:
+    is-url: "npm:^1.2.4"
+    node-fetch: "npm:^2.6.1"
+    regenerator-runtime: "npm:^0.13.7"
+    resolve-url: "npm:^0.2.1"
+  checksum: 10c0/ed5d8d570b48f2b796387dec9f7c9fd206e5b2274c809dba47ade7ed3340f6aa987a87818601a554bbee7f2713f7606f90355b32339a2ba061484aed8e160ac9
+  languageName: node
+  linkType: hard
+
 "@floating-ui/core@npm:^1.6.0":
   version: 1.6.8
   resolution: "@floating-ui/core@npm:1.6.8"
@@ -11844,6 +11863,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"is-url@npm:^1.2.4":
+  version: 1.2.4
+  resolution: "is-url@npm:1.2.4"
+  checksum: 10c0/0157a79874f8f95fdd63540e3f38c8583c2ef572661cd0693cda80ae3e42dfe8e9a4a972ec1b827f861d9a9acf75b37f7d58a37f94a8a053259642912c252bc3
+  languageName: node
+  linkType: hard
+
 "is-weakmap@npm:^2.0.2":
   version: 2.0.2
   resolution: "is-weakmap@npm:2.0.2"
@@ -13042,6 +13068,8 @@ __metadata:
   resolution: "mantine-next-template@workspace:."
   dependencies:
     "@babel/core": "npm:^7.24.0"
+    "@ffmpeg/core": "npm:^0.11.0"
+    "@ffmpeg/ffmpeg": "npm:0.9.5"
     "@mantine/core": "npm:^7.14.3"
     "@mantine/dates": "npm:^7.14.3"
     "@mantine/hooks": "npm:^7.14.3"
@@ -13529,7 +13557,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-fetch@npm:^2.6.9":
+"node-fetch@npm:^2.6.1, node-fetch@npm:^2.6.9":
   version: 2.7.0
   resolution: "node-fetch@npm:2.7.0"
   dependencies:
@@ -15007,6 +15035,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"regenerator-runtime@npm:^0.13.7":
+  version: 0.13.11
+  resolution: "regenerator-runtime@npm:0.13.11"
+  checksum: 10c0/12b069dc774001fbb0014f6a28f11c09ebfe3c0d984d88c9bced77fdb6fedbacbca434d24da9ae9371bfbf23f754869307fb51a4c98a8b8b18e5ef748677ca24
+  languageName: node
+  linkType: hard
+
 "regenerator-runtime@npm:^0.14.0":
   version: 0.14.1
   resolution: "regenerator-runtime@npm:0.14.1"
@@ -15148,6 +15183,13 @@ __metadata:
     postcss: "npm:^8.2.14"
     source-map: "npm:0.6.1"
   checksum: 10c0/53eef3620332f2fc35a4deffaa4395064b2ffd1bc28be380faa3f1e99c2fb7bbf0f705700b4539387d5b6c39586df54a92cd5d031606f19de4bf9e0ff1b6a522
+  languageName: node
+  linkType: hard
+
+"resolve-url@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "resolve-url@npm:0.2.1"
+  checksum: 10c0/c285182cfcddea13a12af92129ce0569be27fb0074ffaefbd3ba3da2eac2acecdfc996d435c4982a9fa2b4708640e52837c9153a5ab9255886a00b0b9e8d2a54
   languageName: node
   linkType: hard
 
