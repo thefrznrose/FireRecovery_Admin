@@ -12,6 +12,7 @@ const GoogleSignInButton = () => {
 
   useEffect(() => {
     if (typeof window.google !== "undefined") {
+      console.log(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)
       window.google.accounts.id.initialize({
         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
         callback: handleCredentialResponse,
