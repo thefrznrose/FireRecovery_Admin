@@ -5,7 +5,7 @@ const GoogleSignInButton = () => {
   const handleCredentialResponse = (response: any) => {
     if (response.credential) {
       console.log("Encoded JWT ID token:", response.credential);
-      signIn("google", { redirect: false });
+      signIn("google", { redirect: true });
     } else {
       console.error("No credential received from Google");
     }

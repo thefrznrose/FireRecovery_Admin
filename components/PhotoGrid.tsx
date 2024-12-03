@@ -6,8 +6,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
 import Image from "next/image"; // Import Next.js Image component
 import {IconClockHour9, IconEye, IconFlag, IconTrash, IconLayersIntersect, IconTableImport} from "@tabler/icons-react"
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import {DateRangePicker} from "@nextui-org/react";
+import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
@@ -34,6 +33,60 @@ export default function PhotoGrid() {
   const [startDate, setStartDate] = useState<string>(""); // Start date (dd/mm/yyyy)
   const [endDate, setEndDate] = useState<string>(""); // End date (dd/mm/yyyy)
   const [timeRange, setTimeRange] = useState<[number, number]>([240, 1200]); // Time range in minutes (4:00 AM to 8:00 PM)
+
+  const ffmpeg = createFFmpeg({ log: true });
+
+const handleGenerateTimelapse = async () => {
+  if (selectedForTimelapse.length === 0) {
+    alert("Please select at least one photo for the timelapse.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // Load FFmpeg WebAssembly
+    if (!ffmpeg.isLoaded()) {
+      await ffmpeg.load();
+    }
+
+    // Add selected images to FFmpeg FS
+    for (let i = 0; i < selectedForTimelapse.length; i++) {
+      const photo = selectedForTimelapse[i];
+      const response = await fetch(photo.fileLink);
+      const imageBuffer = await response.arrayBuffer();
+      ffmpeg.FS('writeFile', `img${i}.jpg`, new Uint8Array(imageBuffer));
+    }
+
+    // Generate MP4 timelapse with FFmpeg
+    await ffmpeg.run(
+      '-framerate', '30', // Set frame rate (e.g., 30 fps)
+      '-i', 'img%d.jpg',  // Input files
+      '-vf', 'format=yuv420p', // Ensure compatibility
+      'timelapse.mp4'     // Output file
+    );
+
+    // Retrieve the generated file
+    const mp4Data = ffmpeg.FS('readFile', 'timelapse.mp4');
+    const blob = new Blob([mp4Data.buffer], { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+
+    // Provide download link
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = 'timelapse.mp4';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    alert("Timelapse generated successfully!");
+  } catch (error) {
+    console.error("Error generating timelapse:", error);
+    alert("Failed to generate timelapse.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   
   const filterPhotos = () => {
@@ -609,6 +662,7 @@ export default function PhotoGrid() {
                   : "Select All"}
               </Button>
               <Button
+                onClick={handleGenerateTimelapse}
                 size="xs"
                 fullWidth
                 style={{
@@ -616,7 +670,7 @@ export default function PhotoGrid() {
                   color: "#fff",
                   marginLeft: ".5rem",
                 }}
-                leftSection={<IconClockHour9/>}
+                leftSection={<IconClockHour9 />}
               >
                 Generate MP4
               </Button>
