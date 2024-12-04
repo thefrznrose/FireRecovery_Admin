@@ -15,7 +15,7 @@ export default function HomePage() {
     <>
       {/* <PhotoGrid/> */}
       {/* <LoginButton/> */}
-      <LoginForm/>
+      {/* <LoginForm/> */}
       <PhotoGrid/>
     </>
   );

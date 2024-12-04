@@ -1,8 +1,6 @@
 import { useSession } from "next-auth/react";
 import useGooglePicker from "@/src/hooks/useGooglePicker";
 
-
-
 const FolderPicker = ({ onFolderSelected }: { onFolderSelected: (folderId: string) => void }) => {
   const { data: session } = useSession();
   const isPickerLoaded = useGooglePicker();

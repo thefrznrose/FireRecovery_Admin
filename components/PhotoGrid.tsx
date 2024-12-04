@@ -36,58 +36,120 @@ export default function PhotoGrid() {
 
   const ffmpeg = createFFmpeg({ log: true });
 
-const handleGenerateTimelapse = async () => {
-  if (selectedForTimelapse.length === 0) {
-    alert("Please select at least one photo for the timelapse.");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    // Load FFmpeg WebAssembly
-    if (!ffmpeg.isLoaded()) {
-      await ffmpeg.load();
+  const fetchFileContent = async (fileId: string | null): Promise<Blob> => {
+    console.log("fetching:", fileId)
+    if (!fileId) {
+      throw new Error("fileId cannot be null");
     }
-
-    // Add selected images to FFmpeg FS
-    for (let i = 0; i < selectedForTimelapse.length; i++) {
-      const photo = selectedForTimelapse[i];
-      const response = await fetch(photo.fileLink);
-      const imageBuffer = await response.arrayBuffer();
-      ffmpeg.FS('writeFile', `img${i}.jpg`, new Uint8Array(imageBuffer));
-    }
-
-    // Generate MP4 timelapse with FFmpeg
-    await ffmpeg.run(
-      '-framerate', '30', // Set frame rate (e.g., 30 fps)
-      '-i', 'img%d.jpg',  // Input files
-      '-vf', 'format=yuv420p', // Ensure compatibility
-      'timelapse.mp4'     // Output file
+  
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      {
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      }
     );
+    console.log("Response: ", response)
+  
+    if (!response.ok) {
+      throw new Error(`Error fetching file: ${response.statusText}`);
+    }
+    console.log(response)
+    return await response.blob();
+  };
 
-    // Retrieve the generated file
-    const mp4Data = ffmpeg.FS('readFile', 'timelapse.mp4');
-    const blob = new Blob([mp4Data.buffer], { type: 'video/mp4' });
-    const url = URL.createObjectURL(blob);
-
-    // Provide download link
-    const downloadLink = document.createElement('a');
-    downloadLink.href = url;
-    downloadLink.download = 'timelapse.mp4';
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-
-    alert("Timelapse generated successfully!");
-  } catch (error) {
-    console.error("Error generating timelapse:", error);
-    alert("Failed to generate timelapse.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  const handleGenerateTimelapse = async () => {
+    if (selectedForTimelapse.length === 0) {
+      alert("No images selected for timelapse.");
+      return;
+    }
+  
+    console.log("step1");
+    const ffmpeg = createFFmpeg({
+      log: true,
+      corePath: "/ffmpeg-core/ffmpeg-core.js",
+    });
+  
+    console.log("step2");
+    console.log("Loading FFmpeg...");
+    await ffmpeg.load();
+    console.log("FFmpeg loaded successfully.");
+    console.log("step3");
+  
+    try {
+      setLoading(true);
+  
+      // Step 1: Resize Images Sequentially
+      const imageFiles = [];
+      for (let index = 0; index < selectedForTimelapse.length; index++) {
+        const photo = selectedForTimelapse[index];
+        const fileId = extractFileId(photo.fileLink);
+        const blob = await fetchFileContent(fileId);
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const filename = `image_${String(index).padStart(3, "0")}.jpg`;
+        const resizedFilename = `resized_${String(index).padStart(3, "0")}.jpg`;
+  
+        ffmpeg.FS("writeFile", filename, uint8Array);
+  
+        console.log(`Processing image ${index + 1}/${selectedForTimelapse.length}`);
+        await ffmpeg.run(
+          "-i",
+          filename,
+          "-vf",
+          "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+          "-pix_fmt",
+          "yuv420p",
+          resizedFilename
+        );
+  
+        ffmpeg.FS("unlink", filename); // Remove original
+        imageFiles.push(resizedFilename);
+      }
+  
+      // Step 2: Write Input File List
+      const inputList = imageFiles
+        .map((filename) => `file '${filename}'\nduration 2\n`) // 2 seconds per image
+        .join("");
+      console.log(inputList)
+      ffmpeg.FS("writeFile", "input.txt", new TextEncoder().encode(inputList));
+  
+      // Step 3: Generate Timelapse
+      console.log("Generating timelapse...");
+      await ffmpeg.run(
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        "input.txt",
+        "-vsync",
+        "vfr",
+        "-pix_fmt",
+        "yuv420p",
+        "-r",
+        "30",
+        "timelapse.mp4"
+      );
+  
+      // Step 4: Read and Download Timelapse
+      console.log("Timelapse generation completed.");
+      const data = ffmpeg.FS("readFile", "timelapse.mp4");
+      const videoBlob = new Blob([data.buffer], { type: "video/mp4" });
+      const videoUrl = URL.createObjectURL(videoBlob);
+  
+      const downloadLink = document.createElement("a");
+      downloadLink.href = videoUrl;
+      downloadLink.download = "timelapse.mp4";
+      downloadLink.click();
+    } catch (error) {
+      console.error("Error generating timelapse:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   
   const filterPhotos = () => {
     console.log("Start date input:", startDate);
