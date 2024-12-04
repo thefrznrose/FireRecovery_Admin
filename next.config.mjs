@@ -16,21 +16,12 @@ export default withBundleAnalyzer({
   },
   async headers() {
     return [
-      // Headers for FFmpeg resources
       {
-        source: "/(ffmpeg-core|static|public)/(.*)",
-        headers: [
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
-        ],
-      },
-      // Headers for all other resources (Google popups)
-      {
+        // Apply stricter headers for all paths
         source: "/(.*)",
         headers: [
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
-          { key: "Cross-Origin-Embedder-Policy", value: "unsafe-none" },
-          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          // { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
         ],
       },
     ];
