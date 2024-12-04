@@ -65,58 +65,60 @@ export default function PhotoGrid() {
       return;
     }
   
-    console.log("step1");
+    console.log("Starting timelapse generation...");
     const ffmpeg = createFFmpeg({
       log: true,
       corePath: "/ffmpeg-core/ffmpeg-core.js",
     });
   
-    console.log("step2");
     console.log("Loading FFmpeg...");
     await ffmpeg.load();
     console.log("FFmpeg loaded successfully.");
-    console.log("step3");
   
     try {
       setLoading(true);
   
-      // Step 1: Resize Images Sequentially
       const imageFiles = [];
       for (let index = 0; index < selectedForTimelapse.length; index++) {
         const photo = selectedForTimelapse[index];
         const fileId = extractFileId(photo.fileLink);
+  
+        console.log(`Fetching image ${index + 1}/${selectedForTimelapse.length}...`);
         const blob = await fetchFileContent(fileId);
         const arrayBuffer = await blob.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
+  
         const filename = `image_${String(index).padStart(3, "0")}.jpg`;
         const resizedFilename = `resized_${String(index).padStart(3, "0")}.jpg`;
   
         ffmpeg.FS("writeFile", filename, uint8Array);
   
-        console.log(`Processing image ${index + 1}/${selectedForTimelapse.length}`);
+        console.log(`Resizing image ${index + 1}/${selectedForTimelapse.length}...`);
+        // Lower the resolution of the images
         await ffmpeg.run(
           "-i",
           filename,
           "-vf",
-          "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+          "scale=1920:1080", // Adjust this resolution as needed
           "-pix_fmt",
           "yuv420p",
           resizedFilename
         );
   
-        ffmpeg.FS("unlink", filename); // Remove original
+        ffmpeg.FS("unlink", filename); // Remove original high-resolution image
         imageFiles.push(resizedFilename);
       }
   
+      console.log("Creating input list for timelapse...");
       // Step 2: Write Input File List
+      const lastImage = imageFiles[imageFiles.length - 1];
       const inputList = imageFiles
         .map((filename) => `file '${filename}'\nduration 2\n`) // 2 seconds per image
-        .join("");
-      console.log(inputList)
+        .join("") + `file '${lastImage}'\nduration 2\n`; // Add the last image twice
       ffmpeg.FS("writeFile", "input.txt", new TextEncoder().encode(inputList));
   
+      console.log("Generating timelapse video...");
       // Step 3: Generate Timelapse
-      console.log("Generating timelapse...");
       await ffmpeg.run(
         "-f",
         "concat",
@@ -133,8 +135,8 @@ export default function PhotoGrid() {
         "timelapse.mp4"
       );
   
+      console.log("Reading and downloading timelapse video...");
       // Step 4: Read and Download Timelapse
-      console.log("Timelapse generation completed.");
       const data = ffmpeg.FS("readFile", "timelapse.mp4");
       const videoBlob = new Blob([data.buffer], { type: "video/mp4" });
       const videoUrl = URL.createObjectURL(videoBlob);
@@ -143,12 +145,15 @@ export default function PhotoGrid() {
       downloadLink.href = videoUrl;
       downloadLink.download = "timelapse.mp4";
       downloadLink.click();
+  
+      console.log("Timelapse generation completed successfully.");
     } catch (error) {
       console.error("Error generating timelapse:", error);
     } finally {
       setLoading(false);
     }
   };
+  
   
   
   const filterPhotos = () => {
