@@ -17,22 +17,11 @@ export default withBundleAnalyzer({
   async headers() {
     return [
       {
-        // Apply stricter headers only to FFmpeg core files
-        source: "/ffmpeg-core/(.*)",
+        // Apply stricter headers for all paths
+        source: "/node_modules",
         headers: [
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
-        ],
-      },
-      {
-        // Allow more relaxed headers for other paths
-        source: "/(.*)",
-        headers: [
-          {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin-allow-popups",
-          },
-          { key: "Cross-Origin-Embedder-Policy", value: "unsafe-none" },
         ],
       },
     ];
