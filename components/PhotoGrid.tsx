@@ -6,7 +6,6 @@ import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
 import Image from "next/image"; // Import Next.js Image component
 import {IconClockHour9, IconEye, IconFlag, IconTrash, IconLayersIntersect, IconTableImport} from "@tabler/icons-react"
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
@@ -34,14 +33,13 @@ export default function PhotoGrid() {
   const [endDate, setEndDate] = useState<string>(""); // End date (dd/mm/yyyy)
   const [timeRange, setTimeRange] = useState<[number, number]>([240, 1200]); // Time range in minutes (4:00 AM to 8:00 PM)
 
-  const ffmpeg = createFFmpeg({ log: true });
-
   const fetchFileContent = async (fileId: string | null): Promise<Blob> => {
-    console.log("fetching:", fileId)
     if (!fileId) {
       throw new Error("fileId cannot be null");
     }
   
+    console.log(`Fetching full-resolution image for File ID: ${fileId}`);
+    
     const response = await fetch(
       `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
       {
@@ -50,109 +48,16 @@ export default function PhotoGrid() {
         },
       }
     );
-    console.log("Response: ", response)
   
     if (!response.ok) {
+      console.error(`Error fetching file ${fileId}: ${response.statusText}`);
       throw new Error(`Error fetching file: ${response.statusText}`);
     }
-    console.log(response)
+  
+    console.log(`Successfully fetched full-resolution image for File ID: ${fileId}`);
     return await response.blob();
   };
-
-  // const handleGenerateTimelapse = async () => {
-  //   if (selectedForTimelapse.length === 0) {
-  //     alert("No images selected for timelapse.");
-  //     return;
-  //   }
   
-  //   console.log("Starting timelapse generation...");
-  //   const ffmpeg = createFFmpeg({
-  //     log: true,
-  //     corePath: "/ffmpeg-core/ffmpeg-core.js",
-  //   });
-  
-  //   console.log("Loading FFmpeg...");
-  //   await ffmpeg.load();
-  //   console.log("FFmpeg loaded successfully.");
-  
-  //   try {
-  //     setLoading(true);
-  
-  //     const imageFiles = [];
-  //     for (let index = 0; index < selectedForTimelapse.length; index++) {
-  //       const photo = selectedForTimelapse[index];
-  //       const fileId = extractFileId(photo.fileLink);
-  
-  //       console.log(`Fetching image ${index + 1}/${selectedForTimelapse.length}...`);
-  //       const blob = await fetchFileContent(fileId);
-  //       const arrayBuffer = await blob.arrayBuffer();
-  //       const uint8Array = new Uint8Array(arrayBuffer);
-  
-  //       const filename = `image_${String(index).padStart(3, "0")}.jpg`;
-  //       const resizedFilename = `resized_${String(index).padStart(3, "0")}.jpg`;
-  
-  //       ffmpeg.FS("writeFile", filename, uint8Array);
-  
-  //       console.log(`Resizing image ${index + 1}/${selectedForTimelapse.length}...`);
-  //       // Lower the resolution of the images
-  //       await ffmpeg.run(
-  //         "-i",
-  //         filename,
-  //         "-vf",
-  //         "scale=1920:1080", // Adjust this resolution as needed
-  //         "-pix_fmt",
-  //         "yuv420p",
-  //         resizedFilename
-  //       );
-  
-  //       ffmpeg.FS("unlink", filename); // Remove original high-resolution image
-  //       imageFiles.push(resizedFilename);
-  //     }
-  
-  //     console.log("Creating input list for timelapse...");
-  //     // Step 2: Write Input File List
-  //     const lastImage = imageFiles[imageFiles.length - 1];
-  //     const inputList = imageFiles
-  //       .map((filename) => `file '${filename}'\nduration 2\n`) // 2 seconds per image
-  //       .join("") + `file '${lastImage}'\nduration 2\n`; // Add the last image twice
-  //     ffmpeg.FS("writeFile", "input.txt", new TextEncoder().encode(inputList));
-  
-  //     console.log("Generating timelapse video...");
-  //     // Step 3: Generate Timelapse
-  //     await ffmpeg.run(
-  //       "-f",
-  //       "concat",
-  //       "-safe",
-  //       "0",
-  //       "-i",
-  //       "input.txt",
-  //       "-vsync",
-  //       "vfr",
-  //       "-pix_fmt",
-  //       "yuv420p",
-  //       "-r",
-  //       "30",
-  //       "timelapse.mp4"
-  //     );
-  
-  //     console.log("Reading and downloading timelapse video...");
-  //     // Step 4: Read and Download Timelapse
-  //     const data = ffmpeg.FS("readFile", "timelapse.mp4");
-  //     const videoBlob = new Blob([data.buffer], { type: "video/mp4" });
-  //     const videoUrl = URL.createObjectURL(videoBlob);
-  
-  //     const downloadLink = document.createElement("a");
-  //     downloadLink.href = videoUrl;
-  //     downloadLink.download = "timelapse.mp4";
-  //     downloadLink.click();
-  
-  //     console.log("Timelapse generation completed successfully.");
-  //   } catch (error) {
-  //     console.error("Error generating timelapse:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   
   const handleGenerateTimelapse = async (): Promise<void> => {
     if (selectedForTimelapse.length === 0) {
@@ -170,10 +75,10 @@ export default function PhotoGrid() {
         throw new Error("Failed to get 2D context for canvas.");
       }
   
-      const stream = canvas.captureStream(1); // 30 FPS
-      const recorder = new MediaRecorder(stream, { mimeType: "video/webm; codecs=vp8" });
-  
       const chunks: Blob[] = [];
+      const stream = canvas.captureStream(5); // 30 FPS
+      const recorder = new MediaRecorder(stream, { mimeType: "video/webm; codecs=vp9" });
+  
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
@@ -189,44 +94,38 @@ export default function PhotoGrid() {
         });
       };
   
-      const drawImageFrames = (duration: number, fps: number): Promise<void> => {
-        return new Promise((resolve) => {
-          const totalFrames = Math.ceil((duration / 1000) * fps);
-          let frameCount = 0;
-  
-          const renderFrame = () => {
-            if (frameCount >= totalFrames) {
-              resolve();
-              return;
-            }
-            frameCount++;
-            requestAnimationFrame(renderFrame);
-          };
-  
-          renderFrame();
-        });
-      };
-  
       const preFetchedImages = await Promise.all(
         selectedForTimelapse.map(async (photo) => {
           const fileId = extractFileId(photo.fileLink);
-          const blob = await fetchFileContent(fileId);
-          return loadImage(blob);
+          try {
+            const blob = await fetchFileContent(fileId); // Fetch high-res content
+            return await loadImage(blob);
+          } catch (error) {
+            console.error(`Error fetching or loading image for file ID ${fileId}:`, error);
+            return null; // Skip failed images
+          }
         })
-      );
+      ).then((images) => images.filter((img) => img)); // Filter out null results
   
-      // Add the last image twice
-      const lastImage = preFetchedImages[preFetchedImages.length - 1];
-      preFetchedImages.push(lastImage);
+      const displayDuration = 4000; // Duration for each image in ms (2 seconds)
+      const fps = 30; // Frames per second
+      const totalFramesPerImage = Math.ceil((displayDuration / 1000) * fps);
   
       for (const img of preFetchedImages) {
-        canvas.width = img.naturalWidth > 1920 ? 1920 : img.naturalWidth;
-        canvas.height = img.naturalHeight > 1080 ? 1080 : img.naturalHeight;
+        if (!img) continue;
   
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        // Adjust canvas size to match the image
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
   
-        await drawImageFrames(4000, 30); // 2 seconds per image at 30 FPS
+        // Draw each frame
+        for (let frame = 0; frame < totalFramesPerImage; frame++) {
+          ctx.clearRect(0, 0, 10000,10000);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  
+          // Wait for the next frame
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
       }
   
       recorder.stop();
@@ -238,6 +137,7 @@ export default function PhotoGrid() {
         };
       });
   
+      // Download the generated video
       const videoUrl = URL.createObjectURL(videoBlob);
       const downloadLink = document.createElement("a");
       downloadLink.href = videoUrl;
@@ -251,37 +151,6 @@ export default function PhotoGrid() {
       setLoading(false);
     }
   };
-  
-  
-  const drawImageFrames = (duration: number, fps: number): Promise<void> => {
-    return new Promise((resolve) => {
-      const totalFrames = Math.ceil((duration / 1000) * fps);
-      let frameCount = 0;
-  
-      const renderFrame = () => {
-        if (frameCount >= totalFrames) {
-          resolve();
-          return;
-        }
-        frameCount++;
-        requestAnimationFrame(renderFrame);
-      };
-  
-      renderFrame();
-    });
-  };
-
-  const loadImage = (blob: Blob): Promise<HTMLImageElement> => {
-    return new Promise((resolve, reject) => {
-      const img = new window.Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = URL.createObjectURL(blob);
-    });
-  };
-  
-  
-  
   
   
   
@@ -737,7 +606,7 @@ export default function PhotoGrid() {
                     Import Sheet
                   </Button>
                 </Flex>
-                {/* <GoogleSignInButton /> */}
+                 {/* <GoogleSignInButton />  */}
               </div>
             ) : (
               <>
