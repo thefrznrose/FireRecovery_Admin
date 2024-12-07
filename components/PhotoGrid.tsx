@@ -4,8 +4,10 @@ import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider, RangeSlider,
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
-import Image from "next/image"; // Import Next.js Image component
+// import Image from "next/image"; // Import Next.js Image component
 import {IconClockHour9, IconEye, IconFlag, IconTrash, IconLayersIntersect, IconTableImport} from "@tabler/icons-react"
+import LazyLoad from "react-lazyload";
+import Image, { ImageLoaderProps } from "next/image";
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
@@ -520,7 +522,7 @@ export default function PhotoGrid() {
     photoData.map(async (photo) => {
       const fileId = extractFileId(photo.fileLink);
       if (!fileId) {
-        return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Default fallback
+        return { ...photo, thumbnailLink: "/fallback-image.png" }; // Default fallback
       }
 
       try {
@@ -535,14 +537,14 @@ export default function PhotoGrid() {
 
         if (!res.ok) {
           console.error(`Error fetching thumbnail for file ID ${fileId}`);
-          return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Fallback on error
+          return { ...photo, thumbnailLink: "/fallback-image.png" }; // Fallback on error
         }
 
         const data = await res.json();
-        return { ...photo, thumbnailLink: data.thumbnailLink || "/fallback-thumbnail.jpg" }; // Fallback if thumbnailLink is null
+        return { ...photo, thumbnailLink: data.thumbnailLink || "/fallback-image.png" }; // Fallback if thumbnailLink is null
       } catch (error) {
         console.error(`Error fetching thumbnail for file ID ${fileId}:`, error);
-        return { ...photo, thumbnailLink: "/fallback-thumbnail.jpg" }; // Fallback on exception
+        return { ...photo, thumbnailLink: "/fallback-image.png" }; // Fallback on exception
       }
     })
   );
@@ -550,6 +552,9 @@ export default function PhotoGrid() {
   return thumbnails;
 };
 
+const customLoader = ({ src }: ImageLoaderProps): string => {
+  return src; // Use the source URL directly
+};
   
   const handleImageClick = (photo: any) => {
     setSelectedPhoto(photo);
@@ -804,19 +809,20 @@ export default function PhotoGrid() {
             )}
           {/* Image Section */}
           <div style={{ position: "relative", width: "100%", height: "14rem" }}>
-          <img
-            src={`${photo.thumbnailLink}`}
-            alt={photo.name}
-            style={{
-              width: "100%", // or your desired width
-              height: "auto", // Maintain aspect ratio
-              objectFit: "contain",
-            }}
-            onError={(e) => {
-              e.currentTarget.src = photo.thumbnailLink; // Fallback handling
-            }}
-          />
-
+          <LazyLoad height={200} offset={100} once>
+          <Image
+      src={photo.thumbnailLink}
+      alt={photo.name}
+      // loader={customLoader}
+      fill
+      style={{
+        objectFit: "contain", // Maintains aspect ratio
+      }}
+      onError={(e) => {
+        (e.currentTarget as HTMLImageElement).src = photo.thumbnailLink; // Fallback image
+      }}
+    />
+    </LazyLoad>
             
           </div>
           {/* Information Section */}

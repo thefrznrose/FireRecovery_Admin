@@ -13,6 +13,7 @@ export default withBundleAnalyzer({
     domains: process.env.IMAGE_DOMAINS
       ? process.env.IMAGE_DOMAINS.split(",")
       : ["lh3.googleusercontent.com"],
+      // unoptimized: true,
   },
   async headers() {
     return [
