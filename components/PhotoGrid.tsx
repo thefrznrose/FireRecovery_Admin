@@ -79,7 +79,7 @@ export default function PhotoGrid() {
   
       const chunks: Blob[] = [];
       const stream = canvas.captureStream(5); // 30 FPS
-      const recorder = new MediaRecorder(stream, { mimeType: "video/webm; codecs=vp9" });
+      const recorder = new MediaRecorder(stream, { mimeType: "video/webm; codecs=vp8" });
   
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data.size > 0) chunks.push(e.data);
