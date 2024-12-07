@@ -804,17 +804,19 @@ export default function PhotoGrid() {
             )}
           {/* Image Section */}
           <div style={{ position: "relative", width: "100%", height: "14rem" }}>
-            <Image
-              src={`${photo.thumbnailLink}`}
-              alt={photo.name}
-              fill
-              style={{
-                objectFit: "contain", // Ensures the image fits while maintaining aspect ratio
-              }}
-              onError={(e) => {
-                e.currentTarget.src = photo.thumbnailLink; // Fallback handling
-              }}
-            />
+          <img
+            src={`${photo.thumbnailLink}`}
+            alt={photo.name}
+            style={{
+              width: "100%", // or your desired width
+              height: "auto", // Maintain aspect ratio
+              objectFit: "contain",
+            }}
+            onError={(e) => {
+              e.currentTarget.src = photo.thumbnailLink; // Fallback handling
+            }}
+          />
+
             
           </div>
           {/* Information Section */}
