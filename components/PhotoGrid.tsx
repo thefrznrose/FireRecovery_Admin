@@ -22,7 +22,7 @@ export default function PhotoGrid() {
   const [value, setValue] = useState<[Date, Date]>([new Date(2021, 11, 1), new Date(2021, 11, 5)]);
   
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
-  const [sortOption, setSortOption] = useState<string | null>("time-desc"); // Default sorting option
+  const [sortOption, setSortOption] = useState<string | null>("location-asc"); // Default sorting option
   const [selectedForTimelapse, setSelectedForTimelapse] = useState<any[]>([]);
 
   const isLargeScreen = useMediaQuery('(min-width: 1200px)');
@@ -642,10 +642,10 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
               label="Sort By"
               placeholder="Select sorting"
               data={[
-                { value: "time-asc", label: "Taken Time/Date (Oldest First)" },
-                { value: "time-desc", label: "Taken Time/Date (Newest First)" },
                 { value: "location-asc", label: "Location (A-Z)" },
                 { value: "location-desc", label: "Location (Z-A)" },
+                { value: "time-asc", label: "Taken Time/Date (Oldest First)" },
+                { value: "time-desc", label: "Taken Time/Date (Newest First)" },
                 { value: "uploader-asc", label: "Uploader Name (A-Z)" },
                 { value: "uploader-desc", label: "Uploader Name (Z-A)" },
               ]}
