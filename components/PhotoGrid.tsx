@@ -588,7 +588,7 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
                   gap="md"
                 >
                  <GoogleSignInButton /> 
-                  <Button 
+                 <Button 
                     onClick={loadPicker}
                     size="sm"
                     style={{
@@ -600,6 +600,7 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
                     Import Sheet
                   </Button>
                 </Flex>
+                
               </div>
             ) : (
               <>
@@ -699,14 +700,6 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
               Timelapse Generation:
             </Text>
-            <TextInput
-              label="Image Duration (seconds):"
-              type="number"
-              value={imageDuration}
-              onChange={(e) => setImageDuration(Math.max(1, parseInt(e.currentTarget.value) || 1))}
-              placeholder="Enter duration (e.g., 2 seconds)"
-              style={{ marginBottom: "1rem" }}
-            />
             <Flex
             >
               <Button
