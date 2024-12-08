@@ -12,22 +12,23 @@ const GoogleSignInButton = () => {
   };
 
   useEffect(() => {
-    if (typeof window.google !== "undefined") {
-      window.google.accounts.id.initialize({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-        callback: handleCredentialResponse,
-      });
-
-      const buttonDiv = document.getElementById("googleSignInDiv");
-      if (buttonDiv) {
-        window.google.accounts.id.renderButton(buttonDiv, {
-          theme: "outline",
-          size: "large",
+    const initializeGoogleSignIn = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+          callback: handleCredentialResponse,
         });
+        window.google.accounts.id.renderButton(
+          document.getElementById("googleSignInDiv"),
+          { theme: "outline", size: "large" }
+        );
       } else {
-        console.error("Google Sign-In button container not found.");
+        console.log("Retrying Google Sign-In script initialization...");
+        setTimeout(initializeGoogleSignIn, 500); // Retry after 500ms
       }
-    }
+    };
+
+    initializeGoogleSignIn(); // Start the initialization process
   }, []);
 
   return <div id="googleSignInDiv"></div>;
