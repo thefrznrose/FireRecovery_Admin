@@ -11,6 +11,9 @@ import Image, { ImageLoaderProps } from "next/image";
 
 export default function PhotoGrid() {
   const { data: session } = useSession();
+  const [currentPage, setCurrentPage] = useState(1); // Tracks the current page for pagination
+const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more photos are available
+
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [gapiLoaded, setGapiLoaded] = useState(false);
@@ -30,12 +33,35 @@ export default function PhotoGrid() {
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
   const isSmallScreen = useMediaQuery('(min-width: 480px)');
   const [filteredPhotos, setFilteredPhotos] = useState<any[]>([]);
-  const [imageDuration, setImageDuration] = useState<number>(2); // Default to 2 seconds
+  const [imageDuration, setImageDuration] = useState<number>(5); // Default to 2 seconds
 
   const [locationFilter, setLocationFilter] = useState<string | null>(null); // Location filter
   const [startDate, setStartDate] = useState<string>(""); // Start date (dd/mm/yyyy)
   const [endDate, setEndDate] = useState<string>(""); // End date (dd/mm/yyyy)
   const [timeRange, setTimeRange] = useState<[number, number]>([240, 1200]); // Time range in minutes (4:00 AM to 8:00 PM)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMorePhotos && !loading) {
+          setCurrentPage((prevPage) => prevPage + 1);
+        }
+      },
+      { threshold: 1.0 }
+    );
+  
+    const target = document.getElementById("scroll-target");
+    if (target) observer.observe(target);
+  
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [hasMorePhotos, loading]);
+  
+  useEffect(() => {
+    fetchPhotos(currentPage);
+  }, [currentPage]);
+  
 
   const fetchFileContent = async (fileId: string | null): Promise<Blob> => {
     if (!fileId) {
@@ -62,6 +88,26 @@ export default function PhotoGrid() {
     return await response.blob();
   };
   
+  const fetchPhotos = async (page: number) => {
+    setLoading(true);
+    try {
+      // Simulate API request for paginated data
+      const startIndex = (page - 1) * 10;
+      const endIndex = page * 10;
+  
+      const newPhotos = photos.slice(startIndex, endIndex); // Replace this with API logic
+      if (newPhotos.length === 0) {
+        setHasMorePhotos(false);
+        return;
+      }
+  
+      setFilteredPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
+    } catch (error) {
+      console.error("Error fetching photos:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleGenerateTimelapse = async (): Promise<void> => {
     if (selectedForTimelapse.length === 0) {
@@ -869,6 +915,8 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
       </Grid.Col>
     );
   })}
+  {hasMorePhotos && <div id="scroll-target" style={{ height: "1px" }} />}
+  {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
 </Grid>
           {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
         </Grid.Col>
