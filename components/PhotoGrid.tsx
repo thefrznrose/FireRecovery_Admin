@@ -18,6 +18,12 @@ export default function PhotoGrid() {
   const [filter, setFilter] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isProcessingModalOpen, setProcessingModalOpen] = useState(false);
+  // State to count processed images
+  const [processedImageCount, setProcessedImageCount] = useState(0);
+
+// State to keep track of images processed during timelapse generation
+const [processedImages, setProcessedImages] = useState<string[]>([]);
 
   const [value, setValue] = useState<[Date, Date]>([new Date(2021, 11, 1), new Date(2021, 11, 5)]);
   
@@ -66,7 +72,8 @@ export default function PhotoGrid() {
       alert("No images selected for timelapse.");
       return;
     }
-  
+    setProcessedImageCount(0);
+    setProcessingModalOpen(true); 
     setLoading(true);
   
     try {
@@ -128,6 +135,7 @@ export default function PhotoGrid() {
           // Wait for the next frame
           await new Promise((resolve) => requestAnimationFrame(resolve));
         }
+        setProcessedImageCount((prev) => prev + 1);
       }
   
       recorder.stop();
@@ -151,8 +159,11 @@ export default function PhotoGrid() {
       console.error("Error generating timelapse:", error);
     } finally {
       setLoading(false);
+      setProcessingModalOpen(false); // Close modal
     }
   };
+  
+  
   
   
   
@@ -332,17 +343,15 @@ export default function PhotoGrid() {
     setSelectedForTimelapse((prev) => {
       const isSelected = prev.some((item) => item.timestamp === photo.timestamp);
       if (isSelected) {
+        // Remove the photo if it's already selected
         return prev.filter((item) => item.timestamp !== photo.timestamp);
       } else {
-        const updated = [...prev, photo];
-        return updated.sort(
-          (a, b) =>
-            new Date(a.uploadDate + " " + a.uploadTime).getTime() -
-            new Date(b.uploadDate + " " + b.uploadTime).getTime()
-        );
+        // Add the photo to the end of the array
+        return [...prev, photo];
       }
     });
   };
+  
 
   const deletePhoto = async (photo: any, index: number) => {
     if (!spreadsheetId) {
@@ -617,16 +626,16 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
               <>
               <GoogleSignInButton />
               <Button 
-                    onClick={loadPicker}
-                    size="sm"
-                    style={{
-                      marginTop: "1rem",
-                      marginLeft: "3rem"
-                    }}
-                    leftSection={<IconTableImport/>}
-                  >
-                    Import Sheet
-                  </Button>
+                onClick={loadPicker}
+                size="sm"
+                style={{
+                  marginTop: "1rem",
+                  marginLeft: "3rem"
+                }}
+                leftSection={<IconTableImport/>}
+              >
+                Import Sheet
+              </Button>
               </>
               
             )}
@@ -634,12 +643,8 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
               Filters:
             </Text>
-            {/* <TextInput
-              label="Search"
-              placeholder="Search for location,"
-            /> */}
             <Select
-              label="Sort By"
+              label="Sort By:"
               placeholder="Select sorting"
               data={[
                 { value: "location-asc", label: "Location (A-Z)" },
@@ -653,26 +658,27 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
               onChange={setSortOption}
             />
             <Select
-            label="Location"
+            label="Location:"
             placeholder="Select location"
             data={[
               ...new Set(photos.map((photo) => photo.location)), // Unique locations
             ].map((location) => ({ value: location, label: location }))}
             value={locationFilter}
             onChange={setLocationFilter}
-            style={{ marginBottom: "1rem" }}
+            style={{ marginBottom: "1rem", marginTop: "1rem" }}
           />
           <Flex>
             <TextInput
-              label="Start Date (mm/dd/yyyy)"
+              label="Start Date (mm/dd/yyyy):"
               placeholder="e.g., 01/01/2024"
               value={startDate}
               onChange={(e) => setStartDate(e.currentTarget.value)}
+              style={{paddingRight: "1rem"}}
               // onBlur={filterByDateRange} // Trigger filtering when focus is lost
             />
 
             <TextInput
-              label="End Date (mm/dd/yyyy)"
+              label="End Date (mm/dd/yyyy):"
               placeholder="e.g., 31/12/2024"
               value={endDate}
               onChange={(e) => setEndDate(e.currentTarget.value)}
@@ -713,7 +719,7 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
             
             <Divider my="md" />
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
-              Timelapse:
+              Timelapse Generation:
             </Text>
             <Flex
             >
@@ -852,7 +858,7 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
             <Button
               color="yellow"
               size="xs"
-              onClick={() => deletePhoto(photo, index)}
+              // onClick={() => deletePhoto(photo, index)}
               leftSection={<IconFlag />}
               style={{
                 marginTop: "1rem",
@@ -885,26 +891,31 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
     );
   })}
 </Grid>
-
-
           {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
         </Grid.Col>
       </Grid>
 
       <Modal
-        opened={isModalOpen}
-        onClose={() => setModalOpen(false)}
+        opened={isProcessingModalOpen}
+        onClose={() => setProcessingModalOpen(false)}
         centered
-        title={selectedPhoto?.name || "Photo Details"}
+        withCloseButton={false} // Prevent closing during processing
+        // overlayOpacity={0.5}
+        // overlayBlur={3}
+        title="Generating Timelapse..."
       >
-        {selectedPhoto && (
-          <img
-            src={`${selectedPhoto.thumbnailLink}}`}
-            alt={selectedPhoto.name}
-            // style={{ maxWidth: "100%" }}
-          />
-        )}
+        <div style={{ textAlign: "center", padding: "1rem" }}>
+          <Text size="lg" >
+            Processing Images
+          </Text>
+          <Text size="md" mt="sm">
+            {processedImageCount} of {selectedForTimelapse.length} images processed
+          </Text>
+          <Loader size="lg" mt="md" />
+        </div>
       </Modal>
+
+
     </>
   );
 }
