@@ -1,7 +1,10 @@
-import { signIn } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { useEffect } from "react";
+import { Button, Flex, Text } from "@mantine/core";
 
 const GoogleSignInButton = () => {
+  const { data: session } = useSession();
+
   const handleCredentialResponse = (response: any) => {
     if (response.credential) {
       console.log("Encoded JWT ID token:", response.credential);
@@ -31,6 +34,25 @@ const GoogleSignInButton = () => {
     initializeGoogleSignIn(); // Start the initialization process
   }, []);
 
+  if (session) {
+    // Display logged-in user details
+    return (
+      <Flex direction="column" align="start">
+        <Text size="sm">
+          Logged in as:
+        </Text>
+        <Text size="sm">{session.user?.name || "Unknown User"}</Text>
+        <Text size="xs" color="dimmed">
+          {session.user?.email || "No email provided"}
+        </Text>
+        <Button size="xs" mt="sm" color="red" onClick={() => signOut()}>
+          Sign Out
+        </Button>
+      </Flex>
+    );
+  }
+
+  // Render Google Sign-In button if not logged in
   return <div id="googleSignInDiv"></div>;
 };
 

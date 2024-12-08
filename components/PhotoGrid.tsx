@@ -21,12 +21,7 @@ export default function PhotoGrid() {
   const [isProcessingModalOpen, setProcessingModalOpen] = useState(false);
   // State to count processed images
   const [processedImageCount, setProcessedImageCount] = useState(0);
-
-// State to keep track of images processed during timelapse generation
-const [processedImages, setProcessedImages] = useState<string[]>([]);
-
-  const [value, setValue] = useState<[Date, Date]>([new Date(2021, 11, 1), new Date(2021, 11, 5)]);
-  
+  // State to keep track of images processed during timelapse generation
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<string | null>("location-asc"); // Default sorting option
   const [selectedForTimelapse, setSelectedForTimelapse] = useState<any[]>([]);
@@ -35,6 +30,7 @@ const [processedImages, setProcessedImages] = useState<string[]>([]);
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
   const isSmallScreen = useMediaQuery('(min-width: 480px)');
   const [filteredPhotos, setFilteredPhotos] = useState<any[]>([]);
+  const [imageDuration, setImageDuration] = useState<number>(2); // Default to 2 seconds
 
   const [locationFilter, setLocationFilter] = useState<string | null>(null); // Location filter
   const [startDate, setStartDate] = useState<string>(""); // Start date (dd/mm/yyyy)
@@ -116,7 +112,7 @@ const [processedImages, setProcessedImages] = useState<string[]>([]);
         })
       ).then((images) => images.filter((img) => img)); // Filter out null results
   
-      const displayDuration = 4000; // Duration for each image in ms (2 seconds)
+      const displayDuration = imageDuration * 1000; // Duration for each image in ms (2 seconds)
       const fps = 30; // Frames per second
       const totalFramesPerImage = Math.ceil((displayDuration / 1000) * fps);
   
@@ -162,10 +158,6 @@ const [processedImages, setProcessedImages] = useState<string[]>([]);
       setProcessingModalOpen(false); // Close modal
     }
   };
-  
-  
-  
-  
   
   const filterPhotos = () => {
     console.log("Start date input:", startDate);
@@ -574,7 +566,6 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
     <>
       <Grid>
         {/* Sidebar */}
-        
         <Grid.Col span={2.75}>
           <Paper
             withBorder
@@ -589,7 +580,6 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
             }}
           >
               {session && isGoogleAuthenticated ? (
-                
               <div>
                 <Flex
                   // direction={isSmallScreen ? "column" : "row"} // Stack on smaller screens
@@ -597,17 +587,7 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
                   justify="space-between"
                   gap="md"
                 >
-                  <div>
-                    <Text size="md" style={{ fontWeight: 500 }}>
-                      Logged in as:
-                    </Text>
-                    <Text size="sm">
-                      {session.user?.name || "Unknown User"}
-                    </Text>
-                    <Text size="sm" color="dimmed">
-                      {session.user?.email || "No email provided"}
-                    </Text>
-                  </div>
+                 <GoogleSignInButton /> 
                   <Button 
                     onClick={loadPicker}
                     size="sm"
@@ -620,7 +600,6 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
                     Import Sheet
                   </Button>
                 </Flex>
-                 {/* <GoogleSignInButton />  */}
               </div>
             ) : (
               <>
@@ -636,8 +615,7 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
               >
                 Import Sheet
               </Button>
-              </>
-              
+              </> 
             )}
             <Divider my="md" />
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
@@ -721,6 +699,14 @@ const customLoader = ({ src }: ImageLoaderProps): string => {
             <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
               Timelapse Generation:
             </Text>
+            <TextInput
+              label="Image Duration (seconds):"
+              type="number"
+              value={imageDuration}
+              onChange={(e) => setImageDuration(Math.max(1, parseInt(e.currentTarget.value) || 1))}
+              placeholder="Enter duration (e.g., 2 seconds)"
+              style={{ marginBottom: "1rem" }}
+            />
             <Flex
             >
               <Button
