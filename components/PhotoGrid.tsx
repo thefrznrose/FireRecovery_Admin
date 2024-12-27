@@ -1,44 +1,41 @@
-
+// --------------------------------------------------------------------------------------------
+// IMPORTS
 import { useEffect, useState } from "react";
 import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider, RangeSlider, TextInput, Checkbox, Flex } from "@mantine/core";
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
 import GoogleSignInButton from "./Login/GoogleSignInButton";
-// import Image from "next/image"; // Import Next.js Image component
 import {IconClockHour9, IconEye, IconFlag, IconTrash, IconLayersIntersect, IconTableImport} from "@tabler/icons-react"
 import LazyLoad from "react-lazyload";
 import Image, { ImageLoaderProps } from "next/image";
 
-export default function PhotoGrid() {
+export default function PhotoGrid() {  
+  // --------------------------------------------------------------------------------------------
+  // USE STATE VARIABLES
   const { data: session } = useSession();
-  const [currentPage, setCurrentPage] = useState(1); // Tracks the current page for pagination
-const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more photos are available
-
+  const [currentPage, setCurrentPage] = useState(1);   const [hasMorePhotos, setHasMorePhotos] = useState(true); 
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [gapiLoaded, setGapiLoaded] = useState(false);
-  const [isGoogleAuthenticated, setGoogleAuthenticated] = useState(false); // Track Google authenticationc
-  const [filter, setFilter] = useState<string | null>(null);
-  const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
-  const [isModalOpen, setModalOpen] = useState(false);
+  const [isGoogleAuthenticated, setGoogleAuthenticated] = useState(false); 
   const [isProcessingModalOpen, setProcessingModalOpen] = useState(false);
-  // State to count processed images
   const [processedImageCount, setProcessedImageCount] = useState(0);
-  // State to keep track of images processed during timelapse generation
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
-  const [sortOption, setSortOption] = useState<string | null>("location-asc"); // Default sorting option
+  const [sortOption, setSortOption] = useState<string | null>("location-asc"); 
   const [selectedForTimelapse, setSelectedForTimelapse] = useState<any[]>([]);
-
   const isLargeScreen = useMediaQuery('(min-width: 1200px)');
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
   const isSmallScreen = useMediaQuery('(min-width: 480px)');
   const [filteredPhotos, setFilteredPhotos] = useState<any[]>([]);
   const [imageDuration, setImageDuration] = useState<number>(5); // Default to 2 seconds
+  const [locationFilter, setLocationFilter] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>(""); 
+  const [timeRange, setTimeRange] = useState<[number, number]>([240, 1200]); 
 
-  const [locationFilter, setLocationFilter] = useState<string | null>(null); // Location filter
-  const [startDate, setStartDate] = useState<string>(""); // Start date (dd/mm/yyyy)
-  const [endDate, setEndDate] = useState<string>(""); // End date (dd/mm/yyyy)
-  const [timeRange, setTimeRange] = useState<[number, number]>([240, 1200]); // Time range in minutes (4:00 AM to 8:00 PM)
+  // --------------------------------------------------------------------------------------------
+  // PHOTO GRID CONTROLS
+  // --------------------------------------------------------------------------------------------
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -49,139 +46,13 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
       },
       { threshold: 1.0 }
     );
-  
     const target = document.getElementById("scroll-target");
     if (target) observer.observe(target);
-  
     return () => {
       if (target) observer.unobserve(target);
     };
   }, [hasMorePhotos, loading]);
-  
-  useEffect(() => {
-    fetchPhotos(currentPage);
-  }, [currentPage]);
-  
-  const fetchFileContent = async (fileId: string | null): Promise<Blob> => {
-    if (!fileId) {
-      throw new Error("fileId cannot be null");
-    }
-    console.log(`Fetching full-resolution image for File ID: ${fileId}`);
-    const response = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-      {
-        headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
-        },
-      }
-    );
-    if (!response.ok) {
-      console.error(`Error fetching file ${fileId}: ${response.statusText}`);
-      throw new Error(`Error fetching file: ${response.statusText}`);
-    }
-    console.log(`Successfully fetched full-resolution image for File ID: ${fileId}`);
-    return await response.blob();
-  };
-  
-  const fetchPhotos = async (page: number) => {
-    setLoading(true);
-    try {
-      // Simulate API request for paginated data
-      const startIndex = (page - 1) * 10;
-      const endIndex = page * 10;
-      const newPhotos = photos.slice(startIndex, endIndex); // Replace this with API logic
-      if (newPhotos.length === 0) {
-        setHasMorePhotos(false);
-        return;
-      }
-      setFilteredPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
-    } catch (error) {
-      console.error("Error fetching photos:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleGenerateTimelapse = async (): Promise<void> => {
-    if (selectedForTimelapse.length === 0) {
-      alert("No images selected for timelapse.");
-      return;
-    }
-    setProcessedImageCount(0);
-    setProcessingModalOpen(true); 
-    setLoading(true);
-    try {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        throw new Error("Failed to get 2D context for canvas.");
-      }
-      const chunks: Blob[] = [];
-      const stream = canvas.captureStream(5); // 30 FPS
-      const recorder = new MediaRecorder(stream, { mimeType: "video/webm; codecs=vp8" });
-      recorder.ondataavailable = (e: BlobEvent) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
-      recorder.start();
-      const loadImage = (blob: Blob): Promise<HTMLImageElement> => {
-        return new Promise((resolve, reject) => {
-          const img = new window.Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = URL.createObjectURL(blob);
-        });
-      };
-      const preFetchedImages = await Promise.all(
-        selectedForTimelapse.map(async (photo) => {
-          const fileId = extractFileId(photo.fileLink);
-          try {
-            const blob = await fetchFileContent(fileId); // Fetch high-res content
-            return await loadImage(blob);
-          } catch (error) {
-            console.error(`Error fetching or loading image for file ID ${fileId}:`, error);
-            return null; // Skip failed images
-          }
-        })
-      ).then((images) => images.filter((img) => img)); // Filter out null results
-      const displayDuration = imageDuration * 1000; // Duration for each image in ms (2 seconds)
-      const fps = 30; // Frames per second
-      const totalFramesPerImage = Math.ceil((displayDuration / 1000) * fps);
-      for (const img of preFetchedImages) {
-        if (!img) continue;
-        // Adjust canvas size to match the image
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        // Draw each frame
-        for (let frame = 0; frame < totalFramesPerImage; frame++) {
-          ctx.clearRect(0, 0, 10000,10000);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          // Wait for the next frame
-          await new Promise((resolve) => requestAnimationFrame(resolve));
-        }
-        setProcessedImageCount((prev) => prev + 1);
-      }
-      recorder.stop();
-      const videoBlob = await new Promise<Blob>((resolve) => {
-        recorder.onstop = () => {
-          const blob = new Blob(chunks, { type: "video/webm" });
-          resolve(blob);
-        };
-      });
-      // Download the generated video
-      const videoUrl = URL.createObjectURL(videoBlob);
-      const downloadLink = document.createElement("a");
-      downloadLink.href = videoUrl;
-      downloadLink.download = "timelapse.webm";
-      downloadLink.click();
-      console.log("Timelapse generation completed.");
-    } catch (error) {
-      console.error("Error generating timelapse:", error);
-    } finally {
-      setLoading(false);
-      setProcessingModalOpen(false); // Close modal
-    }
-  };
-  
+
   const filterPhotos = () => {
     console.log("Start date input:", startDate);
     console.log("End date input:", endDate);
@@ -197,15 +68,14 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
       const photoDate = new Date(photo.uploadDate.split("/").reverse().join("-"));
       if (isNaN(photoDate.getTime())) {
         console.error(`Invalid photo upload date: ${photo.uploadDate}`);
-        return false; // Exclude photos with invalid upload dates
+        return false;
       }
       console.log("Photo upload date:", photo.uploadDate);
       console.log("Parsed photo date:", photoDate);
-      // Convert uploadTime to minutes since midnight for time filtering
       const timeParts = photo.uploadTime.match(/(\d+):(\d+):(\d+)\s(AM|PM)/);
       if (!timeParts) {
         console.error(`Invalid photo upload time: ${photo.uploadTime}`);
-        return false; // Exclude photos with invalid upload times
+        return false; 
       }
       const hours = parseInt(timeParts[1], 10) % 12 + (timeParts[4] === "PM" ? 12 : 0);
       const minutes = parseInt(timeParts[2], 10);
@@ -216,13 +86,10 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
         "| Time range:",
         timeRange
       );
-      // Location filter
       const matchesLocation =
         !locationFilter || photo.location === locationFilter;
       if (!matchesLocation)
         console.log("Photo excluded by location filter:", photo.location);
-  
-      // Matches date range
       const matchesDate =
         (!start || photoDate >= start) && (!end || photoDate <= end);
       if (!matchesDate)
@@ -234,8 +101,6 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
           "| End:",
           end
         );
-  
-      // Matches time range
       const matchesTime =
         photoTimeInMinutes >= timeRange[0] &&
         photoTimeInMinutes <= timeRange[1];
@@ -247,11 +112,17 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
           "| Time range:",
           timeRange
         );
-  
-      // Combine all filters
       return matchesLocation && matchesDate && matchesTime;
     });
   };
+
+  useEffect(() => {
+    const applyFilters = () => {
+      const results = filterPhotos();
+      setFilteredPhotos(results);
+    };
+    applyFilters();
+  }, [photos, timeRange, startDate, endDate, locationFilter]);
 
   const sortedPhotos = [...filteredPhotos].sort((a, b) => {
     switch (sortOption) {
@@ -271,109 +142,221 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
         return 0;
     }
   });
+  
+// --------------------------------------------------------------------------------------------
+// Timelapse generation:
+// --------------------------------------------------------------------------------------------
 
-  useEffect(() => {
-    // Re-filter photos whenever any filter changes
-    const applyFilters = () => {
-      const results = filterPhotos();
-      setFilteredPhotos(results);
+const handleGenerateTimelapse = async (): Promise<void> => {
+  if (selectedForTimelapse.length === 0) {
+    alert("No images selected for timelapse.");
+    return;
+  }
+  setProcessedImageCount(0);
+  setProcessingModalOpen(true); 
+  setLoading(true);
+  try {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Failed to get 2D context for canvas.");
+    }
+    const chunks: Blob[] = [];
+    const stream = canvas.captureStream(5); // 30 FPS
+    const recorder = new MediaRecorder(stream, { mimeType: "video/webm; codecs=vp8" });
+    recorder.ondataavailable = (e: BlobEvent) => {
+      if (e.data.size > 0) chunks.push(e.data);
     };
-    applyFilters();
-  }, [photos, timeRange, startDate, endDate, locationFilter]);
-
-  useEffect(() => {
-    const initializeGapiAndFetchSheet = async () => {
-      // Retry until gapi is available
-      const retryGapiLoad = () => {
-        if (window.gapi) {
-          setGapiLoaded(true);
-        } else {
-          console.log("Retrying gapi load...");
-          setTimeout(retryGapiLoad, 1000); // Retry after 1 second
-          return;
+    recorder.start();
+    const loadImage = (blob: Blob): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new window.Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = URL.createObjectURL(blob);
+      });
+    };
+    const preFetchedImages = await Promise.all(
+      selectedForTimelapse.map(async (photo) => {
+        const fileId = extractFileId(photo.fileLink);
+        try {
+          const blob = await fetchFileContent(fileId); // Fetch high-res content
+          return await loadImage(blob);
+        } catch (error) {
+          console.error(`Error fetching or loading image for file ID ${fileId}:`, error);
+          return null; // Skip failed images
         }
+      })
+    ).then((images) => images.filter((img) => img)); // Filter out null results
+    const displayDuration = imageDuration * 1000; // Duration for each image in ms (2 seconds)
+    const fps = 30; // Frames per second
+    const totalFramesPerImage = Math.ceil((displayDuration / 1000) * fps);
+    for (const img of preFetchedImages) {
+      if (!img) continue;
+      // Adjust canvas size to match the image
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      // Draw each frame
+      for (let frame = 0; frame < totalFramesPerImage; frame++) {
+        ctx.clearRect(0, 0, 10000,10000);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        // Wait for the next frame
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+      setProcessedImageCount((prev) => prev + 1);
+    }
+    recorder.stop();
+    const videoBlob = await new Promise<Blob>((resolve) => {
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        resolve(blob);
       };
+    });
+    // Download the generated video
+    const videoUrl = URL.createObjectURL(videoBlob);
+    const downloadLink = document.createElement("a");
+    downloadLink.href = videoUrl;
+    downloadLink.download = "timelapse.webm";
+    downloadLink.click();
+    console.log("Timelapse generation completed.");
+  } catch (error) {
+    console.error("Error generating timelapse:", error);
+  } finally {
+    setLoading(false);
+    setProcessingModalOpen(false); // Close modal
+  }
+};
+
+const handleSelectAll = () => {
+  if (selectedForTimelapse.length === filteredPhotos.length) {
+    // If all photos are selected, deselect all
+    setSelectedForTimelapse([]);
+  } else {
+    // Otherwise, select all photos
+    setSelectedForTimelapse([...sortedPhotos]);
+  }
+};
+
+// Image checkbox to select for the timelapse generation
+const handleCheckboxChange = (photo: any) => {
+  setSelectedForTimelapse((prev) => {
+    const isSelected = prev.some((item) => item.timestamp === photo.timestamp);
+    if (isSelected) {
+      // Remove the photo if it's already selected
+      return prev.filter((item) => item.timestamp !== photo.timestamp);
+    } else {
+      // Add the photo to the end of the array
+      return [...prev, photo];
+    }
+  });
+};
   
-      retryGapiLoad(); // Start retrying gapi load
-  
-      // Wait for the session to be established
-      if (!session || !session.accessToken) {
-        console.log("Waiting for authentication...");
-        setTimeout(initializeGapiAndFetchSheet, 5000); // Retry after 1 second if session is unavailable
+// --------------------------------------------------------------------------------------------------
+// Google API stuff
+// --------------------------------------------------------------------------------------------
+const fetchFileContent = async (fileId: string | null): Promise<Blob> => {
+  if (!fileId) {
+    throw new Error("fileId cannot be null");
+  }
+  console.log(`Fetching full-resolution image for File ID: ${fileId}`);
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    {
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
+    }
+  );
+  if (!response.ok) {
+    console.error(`Error fetching file ${fileId}: ${response.statusText}`);
+    throw new Error(`Error fetching file: ${response.statusText}`);
+  }
+  console.log(`Successfully fetched full-resolution image for File ID: ${fileId}`);
+  return await response.blob();
+};
+
+const fetchPhotos = async (page: number) => {
+  setLoading(true);
+  try {
+    // Simulate API request for paginated data
+    const startIndex = (page - 1) * 10;
+    const endIndex = page * 10;
+    const newPhotos = photos.slice(startIndex, endIndex); // Replace this with API logic
+    if (newPhotos.length === 0) {
+      setHasMorePhotos(false);
+      return;
+    }
+    setFilteredPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
+  } catch (error) {
+    console.error("Error fetching photos:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchPhotos(currentPage);
+}, [currentPage]);
+
+useEffect(() => {
+  const initializeGapiAndFetchSheet = async () => {
+    // Retry until gapi is available
+    const retryGapiLoad = () => {
+      if (window.gapi) {
+        setGapiLoaded(true);
+      } else {
+        console.log("Retrying gapi load...");
+        setTimeout(retryGapiLoad, 1000); // Retry after 1 second
         return;
       }
-  
-      // Load spreadsheet ID from localStorage
-      const storedSheetId = localStorage.getItem("spreadsheetId");
-      if (storedSheetId) {
-        console.log("Loading spreadsheet:", storedSheetId);
-        setSpreadsheetId(storedSheetId);
-        try {
-          await fetchSheetData(storedSheetId); // Fetch data for the stored sheet
-          // setGoogleAuthenticated(true)
-        } catch (error) {
-          console.error("Error fetching sheet data:", error);
-          setGoogleAuthenticated(false)
-          setTimeout(initializeGapiAndFetchSheet, 1000); // Retry fetching sheet
-        }
-      } else {
-        console.log("No spreadsheet ID found in localStorage.");
-        // setGoogleAuthenticated(true)
-      }
     };
-  
-    initializeGapiAndFetchSheet(); // Start initialization
-  }, [session]);
-  
-  const handleSelectAll = () => {
-    if (selectedForTimelapse.length === filteredPhotos.length) {
-      // If all photos are selected, deselect all
-      setSelectedForTimelapse([]);
+    retryGapiLoad(); // Start retrying gapi load
+    // Wait for the session to be established
+    if (!session || !session.accessToken) {
+      console.log("Waiting for authentication...");
+      setTimeout(initializeGapiAndFetchSheet, 5000); // Retry after 1 second if session is unavailable
+      return;
+    }
+    // Load spreadsheet ID from localStorage
+    const storedSheetId = localStorage.getItem("spreadsheetId");
+    if (storedSheetId) {
+      console.log("Loading spreadsheet:", storedSheetId);
+      setSpreadsheetId(storedSheetId);
+      try {
+        await fetchSheetData(storedSheetId); // Fetch data for the stored sheet
+        // setGoogleAuthenticated(true)
+      } catch (error) {
+        console.error("Error fetching sheet data:", error);
+        setGoogleAuthenticated(false)
+        setTimeout(initializeGapiAndFetchSheet, 1000); // Retry fetching sheet
+      }
     } else {
-      // Otherwise, select all photos
-      setSelectedForTimelapse([...sortedPhotos]);
+      console.log("No spreadsheet ID found in localStorage.");
+      // setGoogleAuthenticated(true)
     }
   };
-  
 
-  const handleCheckboxChange = (photo: any) => {
-    setSelectedForTimelapse((prev) => {
-      const isSelected = prev.some((item) => item.timestamp === photo.timestamp);
-      if (isSelected) {
-        // Remove the photo if it's already selected
-        return prev.filter((item) => item.timestamp !== photo.timestamp);
-      } else {
-        // Add the photo to the end of the array
-        return [...prev, photo];
-      }
-    });
-  };
-  
+  initializeGapiAndFetchSheet(); // Start initialization
+}, [session]);
 
   const deletePhoto = async (photo: any, index: number) => {
     if (!spreadsheetId) {
       console.error("Spreadsheet ID is not defined. Please select a sheet first.");
       return;
     }
-  
     const fileId = extractFileId(photo.fileLink);
-  
     // Show confirmation dialog
     const isConfirmed = window.confirm(
       "Are you sure you want to delete this photo? This action cannot be undone."
     );
-  
     if (!isConfirmed) {
       return;
     }
-  
     if (!fileId) {
       console.error("File ID not found.");
       return;
     }
-  
     setLoading(true);
-  
     try {
       // Delete the file from Google Drive
       const driveResponse = await fetch(
@@ -385,14 +368,12 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
           },
         }
       );
-  
       if (!driveResponse.ok) {
         const error = await driveResponse.json();
         console.error("Google Drive API Error:", error);
         setLoading(false);
         return;
       }
-  
       // Delete the row from the spreadsheet
       const rowIndex = index + 2; // Spreadsheet rows are 1-indexed and include a header
       const sheetResponse = await fetch(
@@ -405,14 +386,12 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
           },
         }
       );
-  
       if (!sheetResponse.ok) {
         const error = await sheetResponse.json();
         console.error("Google Sheets API Error:", error);
         setLoading(false);
         return;
       }
-  
       // Update the state to remove the deleted photo
       setPhotos((prevPhotos) => prevPhotos.filter((_, i) => i !== index));
     } catch (error) {
@@ -470,8 +449,6 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
       }
     }
   };
-  
-  
 
   const fetchSheetData = async (spreadsheetId: string) => {
     setLoading(true);
@@ -484,21 +461,18 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
           },
         }
       );
-  
       if (!res.ok) {
         setGoogleAuthenticated(false);
         const error = await res.json();
         console.error("Google Sheets API Error:", error);
         return;
       }
-
       if (res.status === 401) {
         console.error("Authentication expired or invalid.");
         setGoogleAuthenticated(false);
         setLoading(false);
         return;
       }
-  
       const data = await res.json();
   
       if (data.values) {
@@ -557,15 +531,6 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
 
   return thumbnails;
 };
-
-const customLoader = ({ src }: ImageLoaderProps): string => {
-  return src; // Use the source URL directly
-};
-  
-  const handleImageClick = (photo: any) => {
-    setSelectedPhoto(photo);
-    setModalOpen(true);
-  };
 
   return (
     <>
