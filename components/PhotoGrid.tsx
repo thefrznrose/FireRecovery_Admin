@@ -62,14 +62,11 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
     fetchPhotos(currentPage);
   }, [currentPage]);
   
-
   const fetchFileContent = async (fileId: string | null): Promise<Blob> => {
     if (!fileId) {
       throw new Error("fileId cannot be null");
     }
-  
     console.log(`Fetching full-resolution image for File ID: ${fileId}`);
-    
     const response = await fetch(
       `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
       {
@@ -78,12 +75,10 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
         },
       }
     );
-  
     if (!response.ok) {
       console.error(`Error fetching file ${fileId}: ${response.statusText}`);
       throw new Error(`Error fetching file: ${response.statusText}`);
     }
-  
     console.log(`Successfully fetched full-resolution image for File ID: ${fileId}`);
     return await response.blob();
   };
@@ -94,13 +89,11 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
       // Simulate API request for paginated data
       const startIndex = (page - 1) * 10;
       const endIndex = page * 10;
-  
       const newPhotos = photos.slice(startIndex, endIndex); // Replace this with API logic
       if (newPhotos.length === 0) {
         setHasMorePhotos(false);
         return;
       }
-  
       setFilteredPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
     } catch (error) {
       console.error("Error fetching photos:", error);
@@ -117,25 +110,19 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
     setProcessedImageCount(0);
     setProcessingModalOpen(true); 
     setLoading(true);
-  
     try {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
-  
       if (!ctx) {
         throw new Error("Failed to get 2D context for canvas.");
       }
-  
       const chunks: Blob[] = [];
       const stream = canvas.captureStream(5); // 30 FPS
       const recorder = new MediaRecorder(stream, { mimeType: "video/webm; codecs=vp8" });
-  
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
-  
       recorder.start();
-  
       const loadImage = (blob: Blob): Promise<HTMLImageElement> => {
         return new Promise((resolve, reject) => {
           const img = new window.Image();
@@ -144,7 +131,6 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
           img.src = URL.createObjectURL(blob);
         });
       };
-  
       const preFetchedImages = await Promise.all(
         selectedForTimelapse.map(async (photo) => {
           const fileId = extractFileId(photo.fileLink);
@@ -157,45 +143,36 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
           }
         })
       ).then((images) => images.filter((img) => img)); // Filter out null results
-  
       const displayDuration = imageDuration * 1000; // Duration for each image in ms (2 seconds)
       const fps = 30; // Frames per second
       const totalFramesPerImage = Math.ceil((displayDuration / 1000) * fps);
-  
       for (const img of preFetchedImages) {
         if (!img) continue;
-  
         // Adjust canvas size to match the image
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
-  
         // Draw each frame
         for (let frame = 0; frame < totalFramesPerImage; frame++) {
           ctx.clearRect(0, 0, 10000,10000);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  
           // Wait for the next frame
           await new Promise((resolve) => requestAnimationFrame(resolve));
         }
         setProcessedImageCount((prev) => prev + 1);
       }
-  
       recorder.stop();
-  
       const videoBlob = await new Promise<Blob>((resolve) => {
         recorder.onstop = () => {
           const blob = new Blob(chunks, { type: "video/webm" });
           resolve(blob);
         };
       });
-  
       // Download the generated video
       const videoUrl = URL.createObjectURL(videoBlob);
       const downloadLink = document.createElement("a");
       downloadLink.href = videoUrl;
       downloadLink.download = "timelapse.webm";
       downloadLink.click();
-  
       console.log("Timelapse generation completed.");
     } catch (error) {
       console.error("Error generating timelapse:", error);
@@ -208,28 +185,22 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
   const filterPhotos = () => {
     console.log("Start date input:", startDate);
     console.log("End date input:", endDate);
-  
     const start = startDate
       ? new Date(startDate.split("/").reverse().join("-"))
       : null;
     const end = endDate
       ? new Date(endDate.split("/").reverse().join("-"))
       : null;
-  
     if (start) console.log("Parsed start date:", start);
     if (end) console.log("Parsed end date:", end);
-  
     return photos.filter((photo) => {
       const photoDate = new Date(photo.uploadDate.split("/").reverse().join("-"));
-  
       if (isNaN(photoDate.getTime())) {
         console.error(`Invalid photo upload date: ${photo.uploadDate}`);
         return false; // Exclude photos with invalid upload dates
       }
-  
       console.log("Photo upload date:", photo.uploadDate);
       console.log("Parsed photo date:", photoDate);
-  
       // Convert uploadTime to minutes since midnight for time filtering
       const timeParts = photo.uploadTime.match(/(\d+):(\d+):(\d+)\s(AM|PM)/);
       if (!timeParts) {
@@ -239,24 +210,12 @@ const [hasMorePhotos, setHasMorePhotos] = useState(true); // Tracks if more phot
       const hours = parseInt(timeParts[1], 10) % 12 + (timeParts[4] === "PM" ? 12 : 0);
       const minutes = parseInt(timeParts[2], 10);
       const photoTimeInMinutes = hours * 60 + minutes;
-  
       console.log(
         "Photo time in minutes:",
         photoTimeInMinutes,
         "| Time range:",
         timeRange
       );
-  
-      // Log specific comparisons for debugging
-      console.log(
-        `Comparing photo time: ${photoTimeInMinutes} with time range: ${timeRange[0]} - ${timeRange[1]}`
-      );
-      console.log(
-        `Time comparison results: ${
-          photoTimeInMinutes >= timeRange[0]
-        } (start) and ${photoTimeInMinutes <= timeRange[1]} (end)`
-      );
-  
       // Location filter
       const matchesLocation =
         !locationFilter || photo.location === locationFilter;
