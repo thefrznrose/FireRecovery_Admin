@@ -414,7 +414,6 @@ useEffect(() => {
       console.error("Google Picker API or Access Token not available");
       return;
     }
-
     window.gapi.load("picker", { callback: createPicker });
   };
 
