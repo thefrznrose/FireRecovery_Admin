@@ -6,12 +6,15 @@ import { IconEye, IconFlag, IconTrash } from "@tabler/icons-react"
 import LazyLoad from "react-lazyload";
 import Image from "next/image";
 import { useDataContext } from "@/public/static/DataContext/DataContext";
+// import Sidebar from "./Sidebar";
+// import TimelapseModal from "./TimelapseModal";
+import { useSession } from "next-auth/react";
 import Sidebar from "./Sidebar";
-import TimelapseModal from "./TimelapseModal";
 
 export default function PhotoGrid() {  
-
+  // const { data: session } = useSession();
   const { 
+    session,
     currentPage, setCurrentPage,
     hasMorePhotos, setHasMorePhotos,
     loading, setLoading,
@@ -27,7 +30,6 @@ export default function PhotoGrid() {
     endDate, setEndDate,
     timeRange, setTimeRange,
     isLargeScreen, isMediumScreen, isSmallScreen,
-    session,
 } = useDataContext();
 
   // --------------------------------------------------------------------------------------------
@@ -492,7 +494,7 @@ useEffect(() => {
           {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
         </Grid.Col>
       </Grid>
-      <TimelapseModal/>
+      {/* <TimelapseModal/> */}
     </>
   );
 }

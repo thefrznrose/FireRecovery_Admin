@@ -4,8 +4,10 @@ import { useSession } from 'next-auth/react';
 import { useMediaQuery } from '@mantine/hooks';
 
 const ContextOfDataContextInstance = createContext<ContextOfDataContext | undefined>(undefined);
+    
 
 export function useDataContext() {
+    console.log("Tyler is a bitch")
     const dataContext = useContext(ContextOfDataContextInstance);
     if (!dataContext) {
         throw new Error('Something went wrong with context provider.');
@@ -13,7 +15,7 @@ export function useDataContext() {
     return dataContext;
 }
 
-export function DataProvider({ children }: DataProviderProps) {
+export function DataContextProvider({ children }: DataProviderProps) {
     const { data: session } = useSession();
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMorePhotos, setHasMorePhotos] = useState(true);
@@ -37,7 +39,6 @@ export function DataProvider({ children }: DataProviderProps) {
     const isLargeScreen = useMediaQuery('(min-width: 1200px)');
     const isMediumScreen = useMediaQuery('(min-width: 768px)');
     const isSmallScreen = useMediaQuery('(min-width: 480px)');
-
 
     const contextValues: ContextOfDataContext = {
         session,

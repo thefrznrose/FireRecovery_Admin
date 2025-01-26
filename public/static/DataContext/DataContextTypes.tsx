@@ -17,7 +17,6 @@ export interface Photo {
     isSelectedForTimelapse: boolean;
 }
 
-
 // Define the Context type for the Data Context
 export interface ContextOfDataContext {
     session: Session | null,
