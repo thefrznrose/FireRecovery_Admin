@@ -16,7 +16,7 @@ const FolderPicker = ({ onFolderSelected }: { onFolderSelected: (folderId: strin
       const picker = new window.google.picker.PickerBuilder()
         .addView(new window.google.picker.DocsView().setIncludeFolders(true))
         .setOAuthToken(session.accessToken)
-        .setDeveloperKey(process.env.NEXT_PUBLIC_GOOGLE_API_KEY!) // Add your API Key
+        .setDeveloperKey(process.env.GOOGLE_API_KEY!) // Add your API Key
         .setCallback((data: any) => {
           if (data.action === window.google.picker.Action.PICKED) {
             const folderId = data.docs[0].id;

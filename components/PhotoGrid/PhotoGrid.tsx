@@ -4,34 +4,43 @@ import { useEffect, useState } from "react";
 import { Grid, Loader, Text, Button, Paper, Select, Modal, Divider, RangeSlider, TextInput, Checkbox, Flex } from "@mantine/core";
 import { useSession } from "next-auth/react";
 import { useMediaQuery } from "@mantine/hooks";
-import GoogleSignInButton from "./Login/GoogleSignInButton";
+import GoogleSignInButton from "../Login/GoogleSignInButton";
 import {IconClockHour9, IconEye, IconFlag, IconTrash, IconLayersIntersect, IconTableImport} from "@tabler/icons-react"
 import LazyLoad from "react-lazyload";
 import Image, { ImageLoaderProps } from "next/image";
+import { useDataContext } from "@/public/static/DataContext/DataContext";
 
 export default function PhotoGrid() {  
+
   // --------------------------------------------------------------------------------------------
   // USE STATE VARIABLES
+  // --------------------------------------------------------------------------------------------
+
+  const { 
+    currentPage, setCurrentPage,
+    hasMorePhotos, setHasMorePhotos,
+    loading, setLoading,
+    photos, setPhotos,
+    gapiLoaded, setGapiLoaded,
+    isGoogleAuthenticated, setGoogleAuthenticated,
+    isProcessingModalOpen, setProcessingModalOpen,
+    processedImageCount, setProcessedImageCount,
+    spreadsheetId, setSpreadsheetId,
+    sortOption, setSortOption,
+    selectedForTimelapse, setSelectedForTimelapse,
+    filteredPhotos, setFilteredPhotos,
+    imageDuration, setImageDuration,
+    locationFilter, setLocationFilter,
+    startDate, setStartDate,
+    endDate, setEndDate,
+    timeRange, setTimeRange
+} = useDataContext();
+
+
   const { data: session } = useSession();
-  const [currentPage, setCurrentPage] = useState(1);   const [hasMorePhotos, setHasMorePhotos] = useState(true); 
-  const [photos, setPhotos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [gapiLoaded, setGapiLoaded] = useState(false);
-  const [isGoogleAuthenticated, setGoogleAuthenticated] = useState(false); 
-  const [isProcessingModalOpen, setProcessingModalOpen] = useState(false);
-  const [processedImageCount, setProcessedImageCount] = useState(0);
-  const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
-  const [sortOption, setSortOption] = useState<string | null>("location-asc"); 
-  const [selectedForTimelapse, setSelectedForTimelapse] = useState<any[]>([]);
   const isLargeScreen = useMediaQuery('(min-width: 1200px)');
   const isMediumScreen = useMediaQuery('(min-width: 768px)');
   const isSmallScreen = useMediaQuery('(min-width: 480px)');
-  const [filteredPhotos, setFilteredPhotos] = useState<any[]>([]);
-  const [imageDuration, setImageDuration] = useState<number>(5); // Default to 2 seconds
-  const [locationFilter, setLocationFilter] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>(""); 
-  const [timeRange, setTimeRange] = useState<[number, number]>([240, 1200]); 
 
   // --------------------------------------------------------------------------------------------
   // PHOTO GRID CONTROLS

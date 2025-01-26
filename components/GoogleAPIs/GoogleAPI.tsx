@@ -112,7 +112,7 @@ const createPicker = (accessToken: string ) => {
           .setSelectFolderEnabled(false) // Disable folder selection
       )
       .setOAuthToken(accessToken)
-      .setDeveloperKey(process.env.NEXT_PUBLIC_GOOGLE_API_KEY!)
+      .setDeveloperKey(process.env.GOOGLE_API_KEY!)
       .setCallback(handlePickerResponse)
       .build();
     picker.setVisible(true);
