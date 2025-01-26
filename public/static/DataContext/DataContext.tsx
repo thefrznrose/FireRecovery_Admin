@@ -1,5 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import { ContextOfDataContext, DataProviderProps, } from './DataContextTypes';
+import { useSession } from 'next-auth/react';
+import { useMediaQuery } from '@mantine/hooks';
 
 const ContextOfDataContextInstance = createContext<ContextOfDataContext | undefined>(undefined);
 
@@ -12,9 +14,11 @@ export function useDataContext() {
 }
 
 export function DataProvider({ children }: DataProviderProps) {
+    const { data: session } = useSession();
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMorePhotos, setHasMorePhotos] = useState(true);
     const [photos, setPhotos] = useState<any[]>([]);
+    const [sortedPhotos, setSortedPhotos] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [gapiLoaded, setGapiLoaded] = useState(false);
     const [isGoogleAuthenticated, setGoogleAuthenticated] = useState(false);
@@ -29,15 +33,21 @@ export function DataProvider({ children }: DataProviderProps) {
     const [startDate, setStartDate] = useState<string>("");
     const [endDate, setEndDate] = useState<string>("");
     const [timeRange, setTimeRange] = useState<[number, number]>([240, 1200]);
+    
+    const isLargeScreen = useMediaQuery('(min-width: 1200px)');
+    const isMediumScreen = useMediaQuery('(min-width: 768px)');
+    const isSmallScreen = useMediaQuery('(min-width: 480px)');
 
 
     const contextValues: ContextOfDataContext = {
+        session,
         currentPage,
         setCurrentPage,
         hasMorePhotos,
         setHasMorePhotos,
         photos,
         setPhotos,
+        sortedPhotos, setSortedPhotos,
         loading,
         setLoading,
         gapiLoaded,
@@ -66,6 +76,9 @@ export function DataProvider({ children }: DataProviderProps) {
         setEndDate,
         timeRange,
         setTimeRange,
+        isLargeScreen,
+        isMediumScreen,
+        isSmallScreen,
     };
 
     return (

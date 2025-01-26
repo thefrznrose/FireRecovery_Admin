@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Session } from 'next-auth';
 
 // Define a Photo interface to store photo-related data
 export interface Photo {
@@ -19,12 +20,15 @@ export interface Photo {
 
 // Define the Context type for the Data Context
 export interface ContextOfDataContext {
+    session: Session | null,
     currentPage: number;
     setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
     hasMorePhotos: boolean;
     setHasMorePhotos: React.Dispatch<React.SetStateAction<boolean>>;
     photos: Photo[];
     setPhotos: React.Dispatch<React.SetStateAction<Photo[]>>;
+    sortedPhotos: Photo[];
+    setSortedPhotos: React.Dispatch<React.SetStateAction<Photo[]>>;
     loading: boolean;
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
     gapiLoaded: boolean;
@@ -53,16 +57,9 @@ export interface ContextOfDataContext {
     setEndDate: React.Dispatch<React.SetStateAction<string>>;
     timeRange: [number, number];
     setTimeRange: React.Dispatch<React.SetStateAction<[number, number]>>;
-}
-
-// Course interface updated for the context
-export interface Course {
-    course_id: number;
-    course_title: string;
-    course_number: string;
-    course_section: string;
-    semester_id: number;
-    photos: Photo[];
+    isLargeScreen: Boolean | undefined;
+    isMediumScreen: Boolean | undefined;
+    isSmallScreen: Boolean | undefined;
 }
 
 // Data Provider props interface
