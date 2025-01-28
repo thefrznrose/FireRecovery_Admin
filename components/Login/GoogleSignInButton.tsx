@@ -4,8 +4,14 @@ import { Button, Flex, Text } from "@mantine/core";
 
 const GoogleSignInButton = () => {
   const { data: session } = useSession();
+  
+  console.log("NEXT_PUBLIC_GOOGLE_CLIENT_ID:", process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+  console.log("NEXT_PUBLIC_NEXT_PUBLIC_GOOGLE_CLIENT_ID:", process.env.NEXT_PUBLIC_NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+
 
   const handleCredentialResponse = (response: any) => {
+    
+    console.log(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
     if (response.credential) {
       console.log("Encoded JWT ID token:", response.credential);
       signIn("google", { redirect: true });
@@ -16,9 +22,10 @@ const GoogleSignInButton = () => {
 
   useEffect(() => {
     const initializeGoogleSignIn = () => {
+      console.log(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
       if (window.google?.accounts?.id) {
         window.google.accounts.id.initialize({
-          client_id: process.env.GOOGLE_CLIENT_ID!,
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
           callback: handleCredentialResponse,
         });
         window.google.accounts.id.renderButton(
