@@ -10,7 +10,7 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
-import GoogleSignInButton from "../Login/GoogleSignInButton";
+import GoogleSignInButton from "../GoogleAPIs/GoogleSignInButton";
 import { IconClockHour9, IconLayersIntersect, IconTableImport } from "@tabler/icons-react";
 import { useDataContext } from "@/public/static/DataContext/DataContext";
 

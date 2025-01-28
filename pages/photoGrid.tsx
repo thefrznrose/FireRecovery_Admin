@@ -1,4 +1,4 @@
-import PhotoGrid from '@/components/PhotoGrid';
+import PhotoGrid from '@/components/PhotoGrid/PhotoGrid';
 
 export default function HomePage() {
 

@@ -6,7 +6,7 @@ import { IconEye, IconFlag, IconTrash } from "@tabler/icons-react"
 import LazyLoad from "react-lazyload";
 import Image from "next/image";
 import { useDataContext } from "@/public/static/DataContext/DataContext";
-import Sidebar from "./PhotoGrid/Sidebar";
+import Sidebar from "./Sidebar";
 
 export default function PhotoGrid() {  
   const { 
@@ -375,19 +375,19 @@ useEffect(() => {
                     <div style={{ position: "relative", width: "100%", height: "14rem" }}>
                     <LazyLoad height={200} offset={100} once>
                     <Image
-                src={photo.thumbnailLink}
-                alt={photo.name}
-                // loader={customLoader}
-                fill
-                style={{
-                  objectFit: "contain", // Maintains aspect ratio
-                }}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = photo.thumbnailLink; // Fallback image
-                }}
-              />
-              </LazyLoad>
-                      
+                      src={photo.thumbnailLink}
+                      alt={photo.fileLink}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      priority // Added the priority prop
+                      style={{
+                        objectFit: "contain", // Maintains aspect ratio
+                      }}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = photo.thumbnailLink; // Fallback image
+                      }}
+                    />
+                    </LazyLoad>
                     </div>
                     {/* Information Section */}
                     <div>
