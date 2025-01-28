@@ -6,13 +6,9 @@ import { IconEye, IconFlag, IconTrash } from "@tabler/icons-react"
 import LazyLoad from "react-lazyload";
 import Image from "next/image";
 import { useDataContext } from "@/public/static/DataContext/DataContext";
-// import Sidebar from "./Sidebar";
-// import TimelapseModal from "./TimelapseModal";
-import { useSession } from "next-auth/react";
-import Sidebar from "./Sidebar";
+import Sidebar from "./PhotoGrid/Sidebar";
 
 export default function PhotoGrid() {  
-  // const { data: session } = useSession();
   const { 
     session,
     currentPage, setCurrentPage,
@@ -53,24 +49,18 @@ export default function PhotoGrid() {
   }, [hasMorePhotos, loading]);
 
   const filterPhotos = () => {
-    console.log("Start date input:", startDate);
-    console.log("End date input:", endDate);
     const start = startDate
       ? new Date(startDate.split("/").reverse().join("-"))
       : null;
     const end = endDate
       ? new Date(endDate.split("/").reverse().join("-"))
       : null;
-    if (start) console.log("Parsed start date:", start);
-    if (end) console.log("Parsed end date:", end);
     return photos.filter((photo) => {
       const photoDate = new Date(photo.uploadDate.split("/").reverse().join("-"));
       if (isNaN(photoDate.getTime())) {
         console.error(`Invalid photo upload date: ${photo.uploadDate}`);
         return false;
       }
-      console.log("Photo upload date:", photo.uploadDate);
-      console.log("Parsed photo date:", photoDate);
       const timeParts = photo.uploadTime.match(/(\d+):(\d+):(\d+)\s(AM|PM)/);
       if (!timeParts) {
         console.error(`Invalid photo upload time: ${photo.uploadTime}`);
@@ -79,38 +69,13 @@ export default function PhotoGrid() {
       const hours = parseInt(timeParts[1], 10) % 12 + (timeParts[4] === "PM" ? 12 : 0);
       const minutes = parseInt(timeParts[2], 10);
       const photoTimeInMinutes = hours * 60 + minutes;
-      console.log(
-        "Photo time in minutes:",
-        photoTimeInMinutes,
-        "| Time range:",
-        timeRange
-      );
       const matchesLocation =
         !locationFilter || photo.location === locationFilter;
-      if (!matchesLocation)
-        console.log("Photo excluded by location filter:", photo.location);
       const matchesDate =
         (!start || photoDate >= start) && (!end || photoDate <= end);
-      if (!matchesDate)
-        console.log(
-          "Photo excluded by date range filter:",
-          photoDate,
-          "| Start:",
-          start,
-          "| End:",
-          end
-        );
       const matchesTime =
         photoTimeInMinutes >= timeRange[0] &&
         photoTimeInMinutes <= timeRange[1];
-        console.log(photoTimeInMinutes, timeRange)
-      if (!matchesTime)
-        console.log(
-          "Photo excluded by time range filter:",
-          photoTimeInMinutes,
-          "| Time range:",
-          timeRange
-        );
       return matchesLocation && matchesDate && matchesTime;
     });
   };
@@ -187,21 +152,18 @@ useEffect(() => {
       if (window.gapi) {
         setGapiLoaded(true);
       } else {
-        console.log("Retrying gapi load...");
         setTimeout(retryGapiLoad, 1000); 
         return;
       }
     };
     retryGapiLoad();
     if (!session || !session.accessToken) {
-      console.log("Waiting for authentication...");
       setTimeout(initializeGapiAndFetchSheet, 5000); // Retry after 1 second if session is unavailable
       return;
     }
     // Load spreadsheet ID from localStorage
     const storedSheetId = localStorage.getItem("spreadsheetId");
     if (storedSheetId) {
-      console.log("Loading spreadsheet:", storedSheetId);
       setSpreadsheetId(storedSheetId);
       try {
         await fetchSheetData(storedSheetId); 
@@ -212,7 +174,6 @@ useEffect(() => {
         setTimeout(initializeGapiAndFetchSheet, 1000);
       }
     } else {
-      console.log("No spreadsheet ID found in localStorage.");
       // setGoogleAuthenticated(true)
     }
   };
@@ -318,7 +279,6 @@ useEffect(() => {
         }));
         const photosWithThumbnails = await fetchThumbnails(photoData);
         setPhotos(photosWithThumbnails);
-        console.log(photosWithThumbnails)
         setGoogleAuthenticated(true)
       }
     } catch (error) {

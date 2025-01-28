@@ -1,5 +1,5 @@
 import React from "react";
-import PhotoGrid from "./PhotoGrid/PhotoGrid";
+import PhotoGrid from "./PhotoGrid";
 // import { DataContextProvider } from "@/public/static/DataContext/DataContext";
 
 export default function IndexComponent() {

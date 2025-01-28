@@ -5,13 +5,7 @@ import { Button, Flex, Text } from "@mantine/core";
 const GoogleSignInButton = () => {
   const { data: session } = useSession();
   
-  console.log("NEXT_PUBLIC_GOOGLE_CLIENT_ID:", process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
-  console.log("NEXT_PUBLIC_NEXT_PUBLIC_GOOGLE_CLIENT_ID:", process.env.NEXT_PUBLIC_NEXT_PUBLIC_GOOGLE_CLIENT_ID);
-
-
-  const handleCredentialResponse = (response: any) => {
-    
-    console.log(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+  const handleCredentialResponse = (response: any) => {    
     if (response.credential) {
       console.log("Encoded JWT ID token:", response.credential);
       signIn("google", { redirect: true });
@@ -34,15 +28,14 @@ const GoogleSignInButton = () => {
         );
       } else {
         console.log("Retrying Google Sign-In script initialization...");
-        setTimeout(initializeGoogleSignIn, 500); // Retry after 500ms
+        setTimeout(initializeGoogleSignIn, 500); 
       }
     };
 
-    initializeGoogleSignIn(); // Start the initialization process
+    initializeGoogleSignIn(); 
   }, []);
 
   if (session) {
-    // Display logged-in user details
     return (
       <Flex direction="column" align="start">
         <Text size="sm">
@@ -58,8 +51,6 @@ const GoogleSignInButton = () => {
       </Flex>
     );
   }
-
-  // Render Google Sign-In button if not logged in
   return <div id="googleSignInDiv"></div>;
 };
 

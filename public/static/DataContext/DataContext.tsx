@@ -5,9 +5,7 @@ import { useMediaQuery } from '@mantine/hooks';
 
 const ContextOfDataContextInstance = createContext<ContextOfDataContext | undefined>(undefined);
     
-
 export function useDataContext() {
-    console.log("Tyler is a bitch")
     const dataContext = useContext(ContextOfDataContextInstance);
     if (!dataContext) {
         throw new Error('Something went wrong with context provider.');
