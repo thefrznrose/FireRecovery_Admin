@@ -1,5 +1,4 @@
-// --------------------------------------------------------------------------------------------
-// IMPORTS
+
 import { useEffect, } from "react";
 import { Grid, Loader, Text, Button, Paper, Modal, Checkbox, } from "@mantine/core";
 import { IconEye, IconFlag, IconTrash } from "@tabler/icons-react"
@@ -7,7 +6,6 @@ import LazyLoad from "react-lazyload";
 import Image from "next/image";
 import { useDataContext } from "@/public/static/DataContext/DataContext";
 import Sidebar from "./Sidebar";
-import TimelapseModal from "./TimelapseModal";
 
 export default function PhotoGrid() {  
   const { 
@@ -29,10 +27,6 @@ export default function PhotoGrid() {
     timeRange, setTimeRange,
     isLargeScreen, isMediumScreen, isSmallScreen,
 } = useDataContext();
-
-  // --------------------------------------------------------------------------------------------
-  // PHOTO GRID CONTROLS
-  // --------------------------------------------------------------------------------------------
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -110,18 +104,15 @@ export default function PhotoGrid() {
       }
     });
   
-    // ❗ Check if sorting actually changed before updating state
     setSortedPhotos((prevSorted) => {
       if (JSON.stringify(prevSorted) === JSON.stringify(sorted)) {
-        return prevSorted; // Avoid unnecessary state updates
+        return prevSorted; 
       }
       return sorted;
     });
   
-  }, [filteredPhotos, sortOption]); // ✅ Only re-run when filters or sort option change
+  }, [filteredPhotos, sortOption]);
   
-  
-// Image checkbox to select for the timelapse generation
 const handleCheckboxChange = (photo: any) => {
   setSelectedForTimelapse((prev) => {
     const isSelected = prev.some((item) => item.timestamp === photo.timestamp);
@@ -132,10 +123,6 @@ const handleCheckboxChange = (photo: any) => {
     }
   });
 };
-  
-// --------------------------------------------------------------------------------------------------
-// Google API stuff
-// --------------------------------------------------------------------------------------------
 
 const fetchPhotos = async (page: number) => {
   setLoading(true);
@@ -161,7 +148,6 @@ useEffect(() => {
 
 useEffect(() => {
   const initializeGapiAndFetchSheet = async () => {
-    // Retry until gapi is available
     const retryGapiLoad = () => {
       if (window.gapi) {
         setGapiLoaded(true);
@@ -172,16 +158,14 @@ useEffect(() => {
     };
     retryGapiLoad();
     if (!session || !session.accessToken) {
-      setTimeout(initializeGapiAndFetchSheet, 5000); // Retry after 1 second if session is unavailable
+      setTimeout(initializeGapiAndFetchSheet, 5000);
       return;
     }
-    // Load spreadsheet ID from localStorage
     const storedSheetId = localStorage.getItem("spreadsheetId");
     if (storedSheetId) {
       setSpreadsheetId(storedSheetId);
       try {
-        await fetchSheetData(storedSheetId); 
-        // setGoogleAuthenticated(true)
+        await fetchSheetData(storedSheetId);
       } catch (error) {
         console.error("Error fetching sheet data:", error);
         setGoogleAuthenticated(false)
@@ -284,12 +268,12 @@ useEffect(() => {
       const data = await res.json();
       if (data.values) {
         const photoData = data.values.slice(1).map((row: any) => ({
-          timestamp: row[0], // Assuming timestamp is in column A
-          location: row[1], // Assuming location is in column B
-          uploaderName: row[2], // Assuming uploader name is in column C
-          uploadDate: row[3], // Assuming upload date is in column D
-          uploadTime: row[4], // Assuming upload time is in column E
-          fileLink: row[5], // Assuming file link is in column F
+          timestamp: row[0],
+          location: row[1],
+          uploaderName: row[2],
+          uploadDate: row[3],
+          uploadTime: row[4],
+          fileLink: row[5],
         }));
         const photosWithThumbnails = await fetchThumbnails(photoData);
         setPhotos(photosWithThumbnails);
@@ -307,7 +291,7 @@ useEffect(() => {
     photoData.map(async (photo) => {
       const fileId = extractFileId(photo.fileLink);
       if (!fileId) {
-        return { ...photo, thumbnailLink: "/fallback-image.png" }; // Default fallback
+        return { ...photo, thumbnailLink: "/fallback-image.png" }; 
       }
       try {
         const res = await fetch(
@@ -320,13 +304,13 @@ useEffect(() => {
         );
         if (!res.ok) {
           console.error(`Error fetching thumbnail for file ID ${fileId}`);
-          return { ...photo, thumbnailLink: "/fallback-image.png" }; // Fallback on error
+          return { ...photo, thumbnailLink: "/fallback-image.png" }; 
         }
         const data = await res.json();
-        return { ...photo, thumbnailLink: data.thumbnailLink || "/fallback-image.png" }; // Fallback if thumbnailLink is null
+        return { ...photo, thumbnailLink: data.thumbnailLink || "/fallback-image.png" }; 
       } catch (error) {
         console.error(`Error fetching thumbnail for file ID ${fileId}:`, error);
-        return { ...photo, thumbnailLink: "/fallback-image.png" }; // Fallback on exception
+        return { ...photo, thumbnailLink: "/fallback-image.png" }; 
       }
     })
   );
@@ -385,7 +369,6 @@ useEffect(() => {
                           {timelapseIndex + 1}
                         </div>
                       )}
-                    {/* Image Section */}
                     <div style={{ position: "relative", width: "100%", height: "14rem" }}>
                     <LazyLoad height={200} offset={100} once>
                     <Image
@@ -393,9 +376,9 @@ useEffect(() => {
                       alt={photo.fileLink}
                       fill
                       sizes="(max-width: 768px) 100vw, 50vw"
-                      priority // Added the priority prop
+                      priority
                       style={{
-                        objectFit: "contain", // Maintains aspect ratio
+                        objectFit: "contain",
                       }}
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = photo.thumbnailLink; // Fallback image
@@ -403,7 +386,6 @@ useEffect(() => {
                     />
                     </LazyLoad>
                     </div>
-                    {/* Information Section */}
                     <div>
                       <Text size="sm">
                         <strong>Location:</strong> {photo.location || "N/A"}
@@ -468,7 +450,6 @@ useEffect(() => {
           {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
         </Grid.Col>
       </Grid>
-      <TimelapseModal/>
     </>
   );
 }
