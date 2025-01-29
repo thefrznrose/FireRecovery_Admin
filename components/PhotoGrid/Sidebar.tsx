@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Button,
   Divider,
@@ -50,6 +50,10 @@ export default function Sidebar() {
     // isProcessingModalOpen,
   } = useDataContext(); // Import state and handlers from DataContext
   
+  const [fetchProgress, setFetchProgress] = useState(0);
+  const [totalImages, setTotalImages] = useState(0);
+  const [isFetching, setIsFetching] = useState(false);
+
   const handleSelectAll = () => {
     if (selectedForTimelapse.length === filteredPhotos.length) {
       // If all photos are selected, deselect all
@@ -216,6 +220,9 @@ const handleGenerateTimelapse = async (): Promise<void> => {
     alert("No images selected for timelapse.");
     return;
   }
+  console.log(selectedForTimelapse)
+  setFetchProgress(0);
+  setTotalImages(selectedForTimelapse.length);
   setProcessedImageCount(0);
   setProcessingModalOpen(true); 
   setLoading(true);
@@ -240,11 +247,15 @@ const handleGenerateTimelapse = async (): Promise<void> => {
         img.src = URL.createObjectURL(blob);
       });
     };
+
+    setIsFetching(true)
+
     const preFetchedImages = await Promise.all(
       selectedForTimelapse.map(async (photo) => {
         const fileId = extractFileId(photo.fileLink);
         try {
           const blob = await fetchFileContent(fileId); // Fetch high-res content
+          setFetchProgress((prev) => prev + 1);
           return await loadImage(blob);
         } catch (error) {
           console.error(`Error fetching or loading image for file ID ${fileId}:`, error);
@@ -252,6 +263,8 @@ const handleGenerateTimelapse = async (): Promise<void> => {
         }
       })
     ).then((images) => images.filter((img) => img)); // Filter out null results
+
+    setIsFetching(false)
     const displayDuration = 2 * 1000; // Duration for each image in ms (2 seconds)
     const fps = 30; // Frames per second
     const totalFramesPerImage = Math.ceil((displayDuration / 1000) * fps);
@@ -459,15 +472,19 @@ const handleGenerateTimelapse = async (): Promise<void> => {
         opened={isProcessingModalOpen}
         onClose={() => setProcessingModalOpen(false)}
         centered
-        withCloseButton={false} // Prevent closing during processing
+        withCloseButton={false}
         title="Generating Timelapse..."
       >
-        <div style={{ textAlign: "center", padding: "1rem" }}>
-          <Text size="lg" >
-            Processing Images
-          </Text>
-          <Loader size="lg" mt="md" />
-        </div>
+        <Paper p="md">
+          <Flex direction="column" align="center" gap="md">
+            <Loader color="blue" size="lg" />
+            {isFetching ? (
+              <Text>Fetching Full Resolution Images: {fetchProgress} / {totalImages}</Text>
+            ) : (
+              <Text>Processing Images: {processedImageCount} / {totalImages}</Text>
+            )}
+          </Flex>
+        </Paper>
       </Modal>
     </Paper>  
   );

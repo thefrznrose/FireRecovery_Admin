@@ -10,18 +10,23 @@ export default withBundleAnalyzer({
     ignoreDuringBuilds: true,
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'another-domain.com',
-        pathname: '/**',
-      },
-    ],
+    domains: process.env.IMAGE_DOMAINS
+      ? process.env.IMAGE_DOMAINS.split(",")
+      : ["lh3.googleusercontent.com"],
+      // unoptimized: true,
+      remotePatterns: [
+        {
+          protocol: 'https',
+          hostname: 'lh3.googleusercontent.com',
+          port: '', // Optional: specify the port if needed
+          pathname: '/**', // Optional: define specific paths
+        },
+        {
+          protocol: 'https',
+          hostname: 'another-domain.com',
+          pathname: '/**',
+        },
+      ],
   },
   async headers() {
     return [

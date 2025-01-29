@@ -16,6 +16,7 @@ export default function PhotoGrid() {
     hasMorePhotos, setHasMorePhotos,
     loading, setLoading,
     photos, setPhotos,
+    sortedPhotos, setSortedPhotos,
     gapiLoaded, setGapiLoaded,
     isGoogleAuthenticated, setGoogleAuthenticated,
     spreadsheetId, setSpreadsheetId,
@@ -26,7 +27,6 @@ export default function PhotoGrid() {
     startDate, setStartDate,
     endDate, setEndDate,
     timeRange, setTimeRange,
-    sortedPhotos, setSortedPhotos,
     isLargeScreen, isMediumScreen, isSmallScreen,
 } = useDataContext();
 
@@ -90,27 +90,36 @@ export default function PhotoGrid() {
     applyFilters();
   }, [photos, timeRange, startDate, endDate, locationFilter]);
 
-
-  //Very bad code below
-  const sortedPhotosCopy = [...filteredPhotos].sort((a, b) => {
-    switch (sortOption) {
-      case "time-asc":
-        return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-      case "time-desc":
-        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-      case "location-asc":
-        return (a.location || "").localeCompare(b.location || "");
-      case "location-desc":
-        return (b.location || "").localeCompare(a.location || "");
-      case "uploader-asc":
-        return (a.uploaderName || "").localeCompare(b.uploaderName || "");
-      case "uploader-desc":
-        return (b.uploaderName || "").localeCompare(a.uploaderName || "");
-      default:
-        return 0;
-    }
-  });
-  setSortedPhotos(sortedPhotosCopy)
+  useEffect(() => {
+    const sorted = [...filteredPhotos].sort((a, b) => {
+      switch (sortOption) {
+        case "time-asc":
+          return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+        case "time-desc":
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        case "location-asc":
+          return (a.location || "").localeCompare(b.location || "");
+        case "location-desc":
+          return (b.location || "").localeCompare(a.location || "");
+        case "uploader-asc":
+          return (a.uploaderName || "").localeCompare(b.uploaderName || "");
+        case "uploader-desc":
+          return (b.uploaderName || "").localeCompare(a.uploaderName || "");
+        default:
+          return 0;
+      }
+    });
+  
+    // ❗ Check if sorting actually changed before updating state
+    setSortedPhotos((prevSorted) => {
+      if (JSON.stringify(prevSorted) === JSON.stringify(sorted)) {
+        return prevSorted; // Avoid unnecessary state updates
+      }
+      return sorted;
+    });
+  
+  }, [filteredPhotos, sortOption]); // ✅ Only re-run when filters or sort option change
+  
   
 // Image checkbox to select for the timelapse generation
 const handleCheckboxChange = (photo: any) => {
@@ -332,7 +341,7 @@ useEffect(() => {
         </Grid.Col>
         <Grid.Col span={9}>
           <Grid gutter="lg" columns={12}>
-            {sortedPhotosCopy.map((photo, index) => {
+            {sortedPhotos.map((photo, index) => {
               const timelapseIndex = selectedForTimelapse.findIndex(
                 (item) => item.timestamp === photo.timestamp
               );
@@ -456,6 +465,7 @@ useEffect(() => {
             {hasMorePhotos && <div id="scroll-target" style={{ height: "1px" }} />}
             {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
           </Grid>
+          {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
         </Grid.Col>
       </Grid>
       <TimelapseModal/>
