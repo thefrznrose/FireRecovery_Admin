@@ -69,7 +69,6 @@ const PhotoItem: React.FC<PhotoItemProps> = ({
             {timelapseIndex + 1}
           </div>
         )}
-
         {/* Image Section */}
         <div style={{ position: "relative", width: "100%", height: "14rem" }}>
           <LazyLoad height={200} offset={100} once>
@@ -88,7 +87,6 @@ const PhotoItem: React.FC<PhotoItemProps> = ({
             />
           </LazyLoad>
         </div>
-
         {/* Information Section */}
         <div>
           <Text size="sm">

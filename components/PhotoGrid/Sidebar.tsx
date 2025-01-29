@@ -4,6 +4,8 @@ import {
   Divider,
   Flex,
   Grid,
+  Loader,
+  Modal,
   Paper,
   RangeSlider,
   Select,
@@ -43,6 +45,9 @@ export default function Sidebar() {
     setSpreadsheetId,
     setGoogleAuthenticated,
     setPhotos,
+    isProcessingModalOpen,
+    processedImageCount,
+    // isProcessingModalOpen,
   } = useDataContext(); // Import state and handlers from DataContext
   
   const handleSelectAll = () => {
@@ -51,6 +56,7 @@ export default function Sidebar() {
       setSelectedForTimelapse([]);
     } else {
       // Otherwise, select all photos
+      console.log(sortedPhotos)
       setSelectedForTimelapse([...sortedPhotos]);
     }
   };
@@ -287,179 +293,182 @@ const handleGenerateTimelapse = async (): Promise<void> => {
 
   return (
     <Paper
-            withBorder
-            style={{
-              padding: "2rem",
-              boxShadow: "sm",
-              height: "100vh", // Full viewport height
-              overflowY: "auto", // Enable vertical scrolling
-              position: "sticky", // Keeps sidebar fixed during scroll
-              top: 0,
-              backgroundColor: "#f9f9f9", // Optional: Light background
-            }}
+      withBorder
+      style={{
+        padding: "2rem",
+        boxShadow: "sm",
+        height: "100vh", // Full viewport height
+        overflowY: "auto", // Enable vertical scrolling
+        position: "sticky", // Keeps sidebar fixed during scroll
+        top: 0,
+        backgroundColor: "#f9f9f9", // Optional: Light background
+      }}
+    >
+        {session && isGoogleAuthenticated ? (
+        <div>
+          <Flex
+            // direction={isSmallScreen ? "column" : "row"} // Stack on smaller screens
+            align={isSmallScreen ? "stretch" : "center"} // Align items based on screen size
+            justify="space-between"
+            gap="md"
           >
-              {session && isGoogleAuthenticated ? (
-              <div>
-                <Flex
-                  // direction={isSmallScreen ? "column" : "row"} // Stack on smaller screens
-                  align={isSmallScreen ? "stretch" : "center"} // Align items based on screen size
-                  justify="space-between"
-                  gap="md"
-                >
-                 <GoogleSignInButton /> 
-                 <Button 
-                    onClick={loadPicker}
-                    size="sm"
-                    style={{
-                      marginTop: "1rem",
-                      marginLeft: "3rem"
-                    }}
-                    leftSection={<IconTableImport/>}
-                  >
-                    Import Sheet
-                  </Button>
-                </Flex>
-                
-              </div>
-            ) : (
-              <>
-              <GoogleSignInButton />
-              <Button 
-                onClick={loadPicker}
-                size="sm"
-                style={{
-                  marginTop: "1rem",
-                  marginLeft: "3rem"
-                }}
-                leftSection={<IconTableImport/>}
-              >
-                Import Sheet
-              </Button>
-              </> 
-            )}
-            <Divider my="md" />
-            <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
-              Filters:
-            </Text>
-            <Select
-              label="Sort By:"
-              placeholder="Select sorting"
-              data={[
-                { value: "location-asc", label: "Location (A-Z)" },
-                { value: "location-desc", label: "Location (Z-A)" },
-                { value: "time-asc", label: "Taken Time/Date (Oldest First)" },
-                { value: "time-desc", label: "Taken Time/Date (Newest First)" },
-                { value: "uploader-asc", label: "Uploader Name (A-Z)" },
-                { value: "uploader-desc", label: "Uploader Name (Z-A)" },
-              ]}
-              value={sortOption}
-              onChange={setSortOption}
-            />
-            <Select
-            label="Location:"
-            placeholder="Select location"
-            data={[
-              ...new Set(photos.map((photo) => photo.location)), // Unique locations
-            ].map((location) => ({ value: location, label: location }))}
-            value={locationFilter}
-            onChange={setLocationFilter}
-            style={{ marginBottom: "1rem", marginTop: "1rem" }}
-          />
-          <Flex>
-            <TextInput
-              label="Start Date (mm/dd/yyyy):"
-              placeholder="e.g., 01/01/2024"
-              value={startDate}
-              onChange={(e) => setStartDate(e.currentTarget.value)}
-              style={{paddingRight: "1rem"}}
-              // onBlur={filterByDateRange} // Trigger filtering when focus is lost
-            />
-
-            <TextInput
-              label="End Date (mm/dd/yyyy):"
-              placeholder="e.g., 31/12/2024"
-              value={endDate}
-              onChange={(e) => setEndDate(e.currentTarget.value)}
-              // onBlur={filterByDateRange} // Trigger filtering when focus is lost
-              
-            />
-          </Flex>
-            <Text size="sm"  style={{ marginBottom: "0.5rem", fontWeight: 500,  marginTop: "1rem" }}>
-              Time of Day:
-            </Text>
-            <RangeSlider
-              style={{ marginTop: "1rem", marginBottom: "3rem", marginRight: "1rem", marginLeft: "1rem" }}
-              label={(value) => {
-                const hours = Math.floor(value / 60);
-                const minutes = value % 60;
-                const period = hours < 12 ? "AM" : "PM";
-                const formattedHours = hours % 12 || 12; // Convert 0 to 12
-                const formattedMinutes = minutes.toString().padStart(2, "0");
-                return `${formattedHours}:${formattedMinutes} ${period}`;
+            <GoogleSignInButton /> 
+            <Button 
+              onClick={loadPicker}
+              size="sm"
+              style={{
+                marginTop: "1rem",
+                marginLeft: "3rem"
               }}
-              marks={[
-                { value: 240, label: "4:00 AM" }, // Start of range
-                { value: 480, label: "8:00 AM" },
-                { value: 720, label: "12:00 PM" },
-                { value: 960, label: "4:00 PM" },
-                { value: 1200, label: "8:00 PM" }, // End of range
-              ]}
-              min={240} // 4:00 AM
-              max={1200} // 8:00 PM
-              step={15} // Increment in 15-minute intervals
-              defaultValue={[240, 1200]} // Default to the full range
-              value={timeRange} // Controlled value
-              onChange={(value) => {
-                setTimeRange(value); // Update time range state
-                console.log("Time range updated:", value);
-              }}
-            />
-            
-            <Divider my="md" />
-            <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
-              Timelapse Generation:
-            </Text>
-            <Flex
+              leftSection={<IconTableImport/>}
             >
-              <Button
-                onClick={handleSelectAll}
-                size="xs"
-                fullWidth
-                style={{
-                  marginBottom: "1rem",
-                  color: "#fff",
-                }}
-                leftSection={<IconLayersIntersect />}
-              >
-                {selectedForTimelapse.length === filteredPhotos.length
-                  ? "Deselect All"
-                  : "Select All"}
-              </Button>
-              <Button
-                onClick={handleGenerateTimelapse}
-                size="xs"
-                fullWidth
-                style={{
-                  marginBottom: "1rem",
-                  color: "#fff",
-                  marginLeft: ".5rem",
-                }}
-                leftSection={<IconClockHour9 />}
-              >
-                Generate MP4
-              </Button>
-            </Flex>
-            {/* <Grid
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(100px, 350px))", // Min 100px, Max 350px for responsive scaling
-    gap: "10px",
-    justifyContent: "center", // Center content within the grid
-    alignItems: "center", // Vertically align items
-  }}
-> */}
-{/* </Grid> */}
+              Import Sheet
+            </Button>
+          </Flex>
+          
+        </div>
+      ) : (
+        <>
+        <GoogleSignInButton />
+        <Button 
+          onClick={loadPicker}
+          size="sm"
+          style={{
+            marginTop: "1rem",
+            marginLeft: "3rem"
+          }}
+          leftSection={<IconTableImport/>}
+        >
+          Import Sheet
+        </Button>
+        </> 
+      )}
+      <Divider my="md" />
+      <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
+        Filters:
+      </Text>
+      <Select
+        label="Sort By:"
+        placeholder="Select sorting"
+        data={[
+          { value: "location-asc", label: "Location (A-Z)" },
+          { value: "location-desc", label: "Location (Z-A)" },
+          { value: "time-asc", label: "Taken Time/Date (Oldest First)" },
+          { value: "time-desc", label: "Taken Time/Date (Newest First)" },
+          { value: "uploader-asc", label: "Uploader Name (A-Z)" },
+          { value: "uploader-desc", label: "Uploader Name (Z-A)" },
+        ]}
+        value={sortOption}
+        onChange={setSortOption}
+      />
+      <Select
+      label="Location:"
+      placeholder="Select location"
+      data={[
+        ...new Set(photos.map((photo) => photo.location)), // Unique locations
+      ].map((location) => ({ value: location, label: location }))}
+      value={locationFilter}
+      onChange={setLocationFilter}
+      style={{ marginBottom: "1rem", marginTop: "1rem" }}
+    />
+    <Flex>
+      <TextInput
+        label="Start Date (mm/dd/yyyy):"
+        placeholder="e.g., 01/01/2024"
+        value={startDate}
+        onChange={(e) => setStartDate(e.currentTarget.value)}
+        style={{paddingRight: "1rem"}}
+        // onBlur={filterByDateRange} // Trigger filtering when focus is lost
+      />
 
-          </Paper>
+      <TextInput
+        label="End Date (mm/dd/yyyy):"
+        placeholder="e.g., 31/12/2024"
+        value={endDate}
+        onChange={(e) => setEndDate(e.currentTarget.value)}
+        // onBlur={filterByDateRange} // Trigger filtering when focus is lost
+        
+      />
+    </Flex>
+      <Text size="sm"  style={{ marginBottom: "0.5rem", fontWeight: 500,  marginTop: "1rem" }}>
+        Time of Day:
+      </Text>
+      <RangeSlider
+        style={{ marginTop: "1rem", marginBottom: "3rem", marginRight: "1rem", marginLeft: "1rem" }}
+        label={(value) => {
+          const hours = Math.floor(value / 60);
+          const minutes = value % 60;
+          const period = hours < 12 ? "AM" : "PM";
+          const formattedHours = hours % 12 || 12; // Convert 0 to 12
+          const formattedMinutes = minutes.toString().padStart(2, "0");
+          return `${formattedHours}:${formattedMinutes} ${period}`;
+        }}
+        marks={[
+          { value: 240, label: "4:00 AM" }, // Start of range
+          { value: 480, label: "8:00 AM" },
+          { value: 720, label: "12:00 PM" },
+          { value: 960, label: "4:00 PM" },
+          { value: 1200, label: "8:00 PM" }, // End of range
+        ]}
+        min={240} // 4:00 AM
+        max={1200} // 8:00 PM
+        step={15} // Increment in 15-minute intervals
+        defaultValue={[240, 1200]} // Default to the full range
+        value={timeRange} // Controlled value
+        onChange={(value) => {
+          setTimeRange(value); // Update time range state
+          console.log("Time range updated:", value);
+        }}
+      />
+      
+      <Divider my="md" />
+      <Text size="xl" mb="md" style={{ fontWeight: 600 }}>
+        Timelapse Generation:
+      </Text>
+      <Flex
+      >
+        <Button
+          onClick={handleSelectAll}
+          size="xs"
+          fullWidth
+          style={{
+            marginBottom: "1rem",
+            color: "#fff",
+          }}
+          leftSection={<IconLayersIntersect />}
+        >
+          {selectedForTimelapse.length === filteredPhotos.length
+            ? "Deselect All"
+            : "Select All"}
+        </Button>
+        <Button
+          onClick={handleGenerateTimelapse}
+          size="xs"
+          fullWidth
+          style={{
+            marginBottom: "1rem",
+            color: "#fff",
+            marginLeft: ".5rem",
+          }}
+          leftSection={<IconClockHour9 />}
+        >
+          Generate Timelapse
+        </Button>
+      </Flex>
+      <Modal
+        opened={isProcessingModalOpen}
+        onClose={() => setProcessingModalOpen(false)}
+        centered
+        withCloseButton={false} // Prevent closing during processing
+        title="Generating Timelapse..."
+      >
+        <div style={{ textAlign: "center", padding: "1rem" }}>
+          <Text size="lg" >
+            Processing Images
+          </Text>
+          <Loader size="lg" mt="md" />
+        </div>
+      </Modal>
+    </Paper>  
   );
 }

@@ -7,6 +7,7 @@ import LazyLoad from "react-lazyload";
 import Image from "next/image";
 import { useDataContext } from "@/public/static/DataContext/DataContext";
 import Sidebar from "./Sidebar";
+import TimelapseModal from "./TimelapseModal";
 
 export default function PhotoGrid() {  
   const { 
@@ -25,6 +26,7 @@ export default function PhotoGrid() {
     startDate, setStartDate,
     endDate, setEndDate,
     timeRange, setTimeRange,
+    sortedPhotos, setSortedPhotos,
     isLargeScreen, isMediumScreen, isSmallScreen,
 } = useDataContext();
 
@@ -88,7 +90,9 @@ export default function PhotoGrid() {
     applyFilters();
   }, [photos, timeRange, startDate, endDate, locationFilter]);
 
-  const sortedPhotos = [...filteredPhotos].sort((a, b) => {
+
+  //Very bad code below
+  const sortedPhotosCopy = [...filteredPhotos].sort((a, b) => {
     switch (sortOption) {
       case "time-asc":
         return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
@@ -106,6 +110,7 @@ export default function PhotoGrid() {
         return 0;
     }
   });
+  setSortedPhotos(sortedPhotosCopy)
   
 // Image checkbox to select for the timelapse generation
 const handleCheckboxChange = (photo: any) => {
@@ -327,7 +332,7 @@ useEffect(() => {
         </Grid.Col>
         <Grid.Col span={9}>
           <Grid gutter="lg" columns={12}>
-            {sortedPhotos.map((photo, index) => {
+            {sortedPhotosCopy.map((photo, index) => {
               const timelapseIndex = selectedForTimelapse.findIndex(
                 (item) => item.timestamp === photo.timestamp
               );
@@ -451,10 +456,9 @@ useEffect(() => {
             {hasMorePhotos && <div id="scroll-target" style={{ height: "1px" }} />}
             {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
           </Grid>
-          {loading && <Loader size="lg" style={{ margin: "2rem auto" }} />}
         </Grid.Col>
       </Grid>
-      {/* <TimelapseModal/> */}
+      <TimelapseModal/>
     </>
   );
 }
