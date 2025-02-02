@@ -64,19 +64,19 @@ cd FireRecovery_admin\next-mantine-template
 yarn install
 ```
 
-4. Start the Development Server where you can run the project locally, update the code, and see changes in real time:
+4. Start the Development Server on port 3000 where you can run the project locally, update the code, and see changes in real time:
 
 ```sh
 yarn run dev
 ```
 
-5. Access the Application. Once the server is running, open a browser and go to:
+HINT: Make sure to close the running server using **ctrl+c** before you close the command line, or else the process will be running on that port indefinitely until you manually kill it by first finding the process ID and terminating it, which is a big pain in the butt just like everything else in life:
+
+5. Access the Application. Once the server is running, open a browser and go to the following url to access port 3000:
 
 ```sh
 localhost:3000
 ```
-
-HINT: Make sure to close the running server using **ctrl+c** before you close the command line, or else the process will be running on that port indefinitely until you manually kill it by first finding the process ID and terminating it, which is a big pain in the butt just like everything else in life:
 
 At this point you should see the web page running, but it will not have any pictures or allow you to login because the environment variables were not uploaded in the github repo for security reason. These environment variables include a google client ID, google API key, and Google Cleint Secret. If you require this file you can either create your own **.env.local** at the root directory and add your own Google Cloud Console information, but the easier way is to contact me at shaunrose831@gmail.com or 831-710-8120 and I will send the file, which you can then copy paste into the root directory of this project.
 
