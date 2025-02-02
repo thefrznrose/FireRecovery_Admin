@@ -42,20 +42,40 @@ In order to run the project you will need to use the command line and git to fir
 mkdir BSLT_Admin
 ```
 
-2. Clone the Repository using Git (Check if you need to install using **git -v** to check the version)
-
-   First change your cwd to the new folder by running the following change directory command
+2. Change the cwd (current working directory) to the new folder by running the following command:
 
 ```sh
-cd
+cd BSLT_Admin
 ```
 
-   Now you can clone the project from github into that folder by running the following command.
+3. Clone this repository into the new folder using Git (Check if you need to install using **git -v** to check the version). If installed run the following command. The HTTPS link can be found under the green code button for future reference:
 
 ```sh
 git clone https://github.com/thefrznrose/FireRecovery_Admin.git
 ```
 
-Open the command line (I use windows powershell), create a new folder, change the cwd (current working directory) to that folder and type 'git clone <RepoHTTPSLinkFoundUnderGreenCodeButton>'. This should clone the project into that folder that you created.
+4. Install the node module dependencies using the following command. This will need to be done every time you install a new package:
+
+```sh
+yarn install
+```
+
+5. At this point you should be able to start a development server where you can update the code and see changes in real time (pretty awesome I know):
+
+```sh
+yarn run dev
+```
+
+6. Once run, you can open the webpage running on your local machine (the server in this case) by opening up a web browser of your choice and going to the **localhost:3000** url, or by **ctrl+leftClicking** on the local host link in the command line. Make sure to close the running server using **ctrl+c** before you close the command line, or else the process will be running on that port indefinitely until you manually kill it by first finding the process ID and terminating it, which is a big pain in the butt just like everything else in life:
+
+```sh
+localhost:3000
+```
+
+7. At this point you should see the web page running, but it will not have any pictures or allow you to login because the environment variables were not uploaded in the github repo for security reason. These environment variables include a google client ID, google API key, and Google Cleint Secret. If you require this file you can either create your own **.env.local** at the root directory and add your own Google Cloud Console information, but the easier way is to contact me at shaunrose831@gmail.com or 831-710-8120 and I will send the file, which you can then copy paste into the root directory of this project.
+
+```sh
+shaunrose831@gmail.com
+```
 
 # Deployment:
