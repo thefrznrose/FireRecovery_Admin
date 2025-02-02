@@ -44,13 +44,13 @@ mkdir BSLT_Admin
 
 2. Clone the Repository using Git (Check if you need to install using **git -v** to check the version)
 
-First change your cwd to the new folder by running the following change directory command
+   First change your cwd to the new folder by running the following change directory command
 
 ```sh
 cd
 ```
 
-Now you can clone the project from github into that folder by running the following command.
+   Now you can clone the project from github into that folder by running the following command.
 
 ```sh
 git clone https://github.com/thefrznrose/FireRecovery_Admin.git
