@@ -1,16 +1,16 @@
 <<<<<<< HEAD
 
-# Big Sur Land Trust Fire Recovery Monitoring - Admin Timelapse Generation Frontend Overview
+# Big Sur Land Trust Fire Recovery Monitoring - Admin Timelapse Generation Frontend Overview:
 
 This repository is the frontend that the administrator (Jenny Jacox) can use to generate a timelapse from hiker uploaded images in an organized way.
 
 There are currently many flaws that need to be addressed, which I can help with, but I encourage you to take ownership over this project and make it your own.
 
-# The Technologies Being Used
+# The Technologies Being Used:
 
-## Next.js +
+## Next.js
 
-The framework being used is a version of react called Next.js, made by a company called vercel. Next.js is very powerful and popular in the industry, being the framework of choice by giants like OpenAi and Tesla. With that said there is a learning curve, and it looks intimidating if you do not have experience with react.
+The framework being used is a version of react called Next.js, made by a company called vercel. Next.js is very powerful and popular in the industry, being the framework of choice by giants like OpenAi and Tesla. With that said there is a learning curve, and it looks intimidating, but it is a lot of fun. I highly encourage using ChatGPT to learn it, but don't forget about the official documentation and stack overflow.
 
 ## Typescript
 
@@ -27,3 +27,17 @@ Mantine is the UI library being used to import components to be used in the proj
 ## Google Cloud Authentication
 
 Google Cloud Authentication is what is being used to login with your gmail account and access your google drive and sheets
+
+# How to Run The Project:
+
+In order to run the project you will need to use the command line and git to first clone the project onto your machine, then install the necessary dependencies, then run the project.
+
+Open the command line (I use windows powershell), create a new folder, change the cwd (current working directory) to that folder and type 'git clone <RepoHTTPSLinkFoundUnderGreenCodeButton>'. This should clone the project into that folder that you created.
+
+
+
+
+
+# Deployment:
+
+
