@@ -4,7 +4,7 @@
 
 This repository is the frontend that the administrator (Jenny Jacox) can use to generate a timelapse from hiker uploaded images in an organized way.
 
-There are currently many flaws that need to be addressed, which I can help with, but I encourage you to take ownership over this project and make it your own.
+There are currently many flaws that need to be addressed, which I can help with, but I encourage you to take ownership over this project and make it yours.
 
 ## Technologies Used
 
@@ -18,7 +18,7 @@ The codebase is written in **TypeScript**, which is similar to JavaScript but in
 
 ### Yarn
 
-Instead of using **npm (Node Package Manager)**, this project uses **Yarn** (Yet Another Resource Negotiator) as the package manager. To install Yarn, run:
+Instead of using **npm (Node Package Manager)**, this project uses **Yarn** (Yet Another Resource Negotiator) as the package manager. To install Yarn, first install node if you have yet to do so already (check by running **node -v** to see the version), then run the following node command:
 
 ```sh
 npm install -g yarn
@@ -32,9 +32,29 @@ Mantine is the UI library being used to import components to be used in the proj
 
 Google Cloud Authentication is what is being used to login with your gmail account and access your google drive and sheets
 
-# How to Run The Project:
+# How to Install and Run The Project:
 
 In order to run the project you will need to use the command line and git to first clone the project onto your machine, then install the necessary dependencies, then run the project.
+
+1. Create a new folder called BSLT_Admin somewhere you can easily find it, mine is in a projects folder on my desktop. You can create a new folder using the command line using the following command when your cwd is on the desktop, or just make a folder by right clicking and selecting create a new folder like a normal person.
+
+```sh
+mkdir BSLT_Admin
+```
+
+2. Clone the Repository using Git (Check if you need to install using **git -v** to check the version)
+
+First change your cwd to the new folder by running the following change directory command
+
+```sh
+cd
+```
+
+Now you can clone the project from github into that folder by running the following command.
+
+```sh
+git clone https://github.com/thefrznrose/FireRecovery_Admin.git
+```
 
 Open the command line (I use windows powershell), create a new folder, change the cwd (current working directory) to that folder and type 'git clone <RepoHTTPSLinkFoundUnderGreenCodeButton>'. This should clone the project into that folder that you created.
 
