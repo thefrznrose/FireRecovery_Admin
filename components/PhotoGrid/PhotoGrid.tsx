@@ -26,7 +26,9 @@ export default function PhotoGrid() {
     endDate, setEndDate,
     timeRange, setTimeRange,
     isLargeScreen, isMediumScreen, isSmallScreen,
-} = useDataContext();
+    flaggedPhotos, setFlaggedPhotos,
+    showFlaggedOnly, setShowFlaggedOnly
+  } = useDataContext();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -44,45 +46,45 @@ export default function PhotoGrid() {
     };
   }, [hasMorePhotos, loading]);
 
-  const filterPhotos = () => {
-    const start = startDate
-      ? new Date(startDate.split("/").reverse().join("-"))
-      : null;
-    const end = endDate
-      ? new Date(endDate.split("/").reverse().join("-"))
-      : null;
-    return photos.filter((photo) => {
-      const photoDate = new Date(photo.uploadDate.split("/").reverse().join("-"));
-      if (isNaN(photoDate.getTime())) {
-        console.error(`Invalid photo upload date: ${photo.uploadDate}`);
-        return false;
-      }
-      const timeParts = photo.uploadTime.match(/(\d+):(\d+):(\d+)\s(AM|PM)/);
-      if (!timeParts) {
-        console.error(`Invalid photo upload time: ${photo.uploadTime}`);
-        return false; 
-      }
-      const hours = parseInt(timeParts[1], 10) % 12 + (timeParts[4] === "PM" ? 12 : 0);
-      const minutes = parseInt(timeParts[2], 10);
-      const photoTimeInMinutes = hours * 60 + minutes;
-      const matchesLocation =
-        !locationFilter || photo.location === locationFilter;
-      const matchesDate =
-        (!start || photoDate >= start) && (!end || photoDate <= end);
-      const matchesTime =
-        photoTimeInMinutes >= timeRange[0] &&
-        photoTimeInMinutes <= timeRange[1];
-      return matchesLocation && matchesDate && matchesTime;
-    });
-  };
+// Replace or modify the existing filterPhotos function
+const filterPhotos = () => {
+  const start = startDate
+    ? new Date(startDate.split("/").reverse().join("-"))
+    : null;
+  const end = endDate
+    ? new Date(endDate.split("/").reverse().join("-"))
+    : null;
+    
+  return photos.filter((photo) => {
+    const photoDate = new Date(photo.uploadDate.split("/").reverse().join("-"));
+    if (isNaN(photoDate.getTime())) {
+      console.error(`Invalid photo upload date: ${photo.uploadDate}`);
+      return false;
+    }
+    
+    const timeParts = photo.uploadTime.match(/(\d+):(\d+):(\d+)\s(AM|PM)/);
+    if (!timeParts) {
+      console.error(`Invalid photo upload time: ${photo.uploadTime}`);
+      return false; 
+    }
+    const hours = parseInt(timeParts[1], 10) % 12 + (timeParts[4] === "PM" ? 12 : 0);
+    const minutes = parseInt(timeParts[2], 10);
+    const photoTimeInMinutes = hours * 60 + minutes;
+    
+    const matchesLocation = !locationFilter || photo.location === locationFilter;
+    const matchesDate = (!start || photoDate >= start) && (!end || photoDate <= end);
+    const matchesTime = photoTimeInMinutes >= timeRange[0] && photoTimeInMinutes <= timeRange[1];
+    const matchesFlagFilter = !showFlaggedOnly || flaggedPhotos.includes(photo.timestamp);
+    
+    return matchesLocation && matchesDate && matchesTime && matchesFlagFilter;
+  });
+};
 
-  useEffect(() => {
-    const applyFilters = () => {
-      const results = filterPhotos();
-      setFilteredPhotos(results);
-    };
-    applyFilters();
-  }, [photos, timeRange, startDate, endDate, locationFilter]);
+useEffect(() => {
+  const results = filterPhotos();
+  setFilteredPhotos(results);
+}, [photos, timeRange, startDate, endDate, locationFilter, showFlaggedOnly, flaggedPhotos]);
+
 
   useEffect(() => {
     const sorted = [...filteredPhotos].sort((a, b) => {
@@ -236,6 +238,118 @@ useEffect(() => {
       setLoading(false);
     }
   };
+
+  const fetchSheetMetadata = async (spreadsheetId: string) => {
+    try {
+      const response = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
+        {
+          headers: { Authorization: `Bearer ${session?.accessToken}` },
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Google Sheets API Metadata Error:", errorData);
+        throw new Error(`Error fetching sheet metadata: ${JSON.stringify(errorData)}`);
+      }
+      
+      const data = await response.json();
+      console.log("Sheet metadata:", data);
+      return data;
+    } catch (error) {
+      console.error("Exception in fetchSheetMetadata:", error);
+      throw error;
+    }
+  };
+
+  const handleFlagPhoto = async (photo: any, index: number) => {
+    // Check if already flagged
+    const isCurrentlyFlagged = flaggedPhotos.includes(photo.timestamp);
+    
+    // Toggle flag status locally first (for immediate UI feedback)
+    if (isCurrentlyFlagged) {
+      setFlaggedPhotos(prev => prev.filter(id => id !== photo.timestamp));
+    } else {
+      setFlaggedPhotos(prev => [...prev, photo.timestamp]);
+    }
+    
+    // Only update Google Sheets if we have a spreadsheetId and session
+    if (spreadsheetId && session?.accessToken) {
+      try {
+        setLoading(true);
+        
+        // First fetch the metadata to get sheet information
+        const metadata = await fetchSheetMetadata(spreadsheetId);
+        
+        if (!metadata.sheets || metadata.sheets.length === 0) {
+          throw new Error("No sheets found in the spreadsheet");
+        }
+        
+        // Get the first sheet's title
+        const firstSheetTitle = metadata.sheets[0].properties.title;
+        console.log(`Using sheet: "${firstSheetTitle}" for flag update`);
+        
+        // Row index is +2 because spreadsheet is 1-indexed and has a header row
+        const rowIndex = index + 2;
+        
+        // The value to put in the "Flagged" column
+        const flagValue = isCurrentlyFlagged ? "" : "Yes";
+        
+        // Try to update using the actual sheet title first
+        try {
+          const response = await fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${firstSheetTitle}!G${rowIndex}:G${rowIndex}?valueInputOption=RAW`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${session.accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                values: [[flagValue]]
+              }),
+            }
+          );
+          
+          if (response.ok) {
+            console.log("Flag status updated successfully");
+            return;
+          }
+          
+          // If that fails, fall back to index 0
+          console.log("Updating by sheet name failed, trying index 0 instead");
+        } catch (error) {
+          console.log("Error updating by sheet name:", error);
+        }
+        
+        // Fallback to index 0
+        const fallbackResponse = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/0!G${rowIndex}:G${rowIndex}?valueInputOption=RAW`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              values: [[flagValue]]
+            }),
+          }
+        );
+        
+        if (!fallbackResponse.ok) {
+          const error = await fallbackResponse.json();
+          console.error("Google Sheets API Error (all attempts failed):", error);
+        }
+        
+      } catch (error) {
+        console.error("Error updating flag status:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
   
   const extractFileId = (url: string) => {
     const match = url.match(/id=([a-zA-Z0-9-_]+)/);
@@ -347,6 +461,20 @@ useEffect(() => {
                       position: "relative", // Needed for overlay positioning
                     }}
                   >
+                      {flaggedPhotos.includes(photo.timestamp) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "0.5rem",
+                            right: "0.5rem",
+                        
+                          }}
+                        >
+                          <IconFlag size={30} />
+                        </div>
+                      )}
+
+
                     {timelapseIndex !== -1 && (
                         <div
                           style={{
@@ -410,17 +538,39 @@ useEffect(() => {
                         View
                       </Button>
                       <Button
-                        color="yellow"
-                        size="xs"
-                        // onClick={() => deletePhoto(photo, index)}
-                        leftSection={<IconFlag />}
-                        style={{
-                          marginTop: "1rem",
-                          marginLeft: "0.5rem",
-                        }}
+                      // Change color based on flag status - orange when flagged, yellow when not
+                      color={flaggedPhotos.includes(photo.timestamp) ? "orange" : "yellow"}
+                      size="xs"
+                      onClick={() => handleFlagPhoto(photo, index)}
+                      leftSection={<IconFlag />}
+                      style={{
+                      marginTop: "1rem",
+                      marginLeft: "0.5rem",
+                      }}
                       >
-                        Flag
-                      </Button>
+                      {/* Dynamic text based on flag status */}
+                      {flaggedPhotos.includes(photo.timestamp) ? "Unflag" : "Flag"}
+                    </Button>
+                    {flaggedPhotos.includes(photo.timestamp) && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "0.5rem",
+                            right: "0.5rem", 
+                            width: "30px",
+                            height: "30px",
+                            backgroundColor: "orange",
+                            color: "#fff",
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 2,
+                          }}
+                        >
+                          <IconFlag size={16} />
+                        </div>
+                      )}
                       <Button
                         color="red"
                         size="xs"

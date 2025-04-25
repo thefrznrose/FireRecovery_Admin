@@ -59,6 +59,10 @@ export interface ContextOfDataContext {
     isLargeScreen: Boolean | undefined;
     isMediumScreen: Boolean | undefined;
     isSmallScreen: Boolean | undefined;
+    flaggedPhotos: string[]; // Array of photo identifiers (timestamps) that are flagged
+    setFlaggedPhotos: React.Dispatch<React.SetStateAction<string[]>>;
+    showFlaggedOnly: boolean; // Flag to toggle viewing only flagged photos
+    setShowFlaggedOnly: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // Data Provider props interface
