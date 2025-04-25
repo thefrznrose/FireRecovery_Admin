@@ -38,6 +38,9 @@ export function DataContextProvider({ children }: DataProviderProps) {
     const isMediumScreen = useMediaQuery('(min-width: 768px)');
     const isSmallScreen = useMediaQuery('(min-width: 480px)');
 
+    const [flaggedPhotos, setFlaggedPhotos] = useState<string[]>([]);
+    const [showFlaggedOnly, setShowFlaggedOnly] = useState<boolean>(false);
+
     const contextValues: ContextOfDataContext = {
         session,
         currentPage,
@@ -78,6 +81,10 @@ export function DataContextProvider({ children }: DataProviderProps) {
         isLargeScreen,
         isMediumScreen,
         isSmallScreen,
+        flaggedPhotos,
+        setFlaggedPhotos,
+        showFlaggedOnly,
+        setShowFlaggedOnly
     };
 
     return (

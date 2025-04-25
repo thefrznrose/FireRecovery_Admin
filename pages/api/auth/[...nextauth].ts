@@ -8,17 +8,12 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: `
-            https://www.googleapis.com/auth/drive
-            https://www.googleapis.com/auth/spreadsheets
-            openid
-            profile
-            email
-          `.replace(/\s+/g, " ").trim(),
+          scope: "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets openid profile email"
         },
       },      
     }),
   ],
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
