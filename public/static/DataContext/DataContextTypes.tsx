@@ -63,6 +63,10 @@ export interface ContextOfDataContext {
     setFlaggedPhotos: React.Dispatch<React.SetStateAction<string[]>>;
     showFlaggedOnly: boolean; // Flag to toggle viewing only flagged photos
     setShowFlaggedOnly: React.Dispatch<React.SetStateAction<boolean>>;
+    favoritePhotos: string[]; // Array of photo identifiers (timestamps) that are marked as favorites
+    setFavoritePhotos: React.Dispatch<React.SetStateAction<string[]>>;
+    showFavoritesOnly: boolean; // Flag to toggle viewing only favorite photos
+    setShowFavoritesOnly: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // Data Provider props interface

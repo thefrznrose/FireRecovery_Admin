@@ -1,7 +1,7 @@
 
 import { useEffect, } from "react";
 import { Grid, Loader, Text, Button, Paper, Modal, Checkbox, } from "@mantine/core";
-import { IconEye, IconFlag, IconTrash } from "@tabler/icons-react"
+import {IconEye, IconFlag, IconHeart, IconTrash} from "@tabler/icons-react"
 import LazyLoad from "react-lazyload";
 import Image from "next/image";
 import { useDataContext } from "@/public/static/DataContext/DataContext";
@@ -27,7 +27,9 @@ export default function PhotoGrid() {
     timeRange, setTimeRange,
     isLargeScreen, isMediumScreen, isSmallScreen,
     flaggedPhotos, setFlaggedPhotos,
-    showFlaggedOnly, setShowFlaggedOnly
+    favoritePhotos, setFavoritePhotos,
+    showFlaggedOnly, setShowFlaggedOnly,
+      showFavoritesOnly, setShowFavoritesOnly,
   } = useDataContext();
 
   useEffect(() => {
@@ -75,8 +77,8 @@ const filterPhotos = () => {
     const matchesDate = (!start || photoDate >= start) && (!end || photoDate <= end);
     const matchesTime = photoTimeInMinutes >= timeRange[0] && photoTimeInMinutes <= timeRange[1];
     const matchesFlagFilter = !showFlaggedOnly || flaggedPhotos.includes(photo.timestamp);
-    
-    return matchesLocation && matchesDate && matchesTime && matchesFlagFilter;
+    const matchesFavoritesFilter = !showFavoritesOnly || favoritePhotos.includes(photo.timestamp);
+    return matchesLocation && matchesDate && matchesTime && matchesFlagFilter && matchesFavoritesFilter;
   });
 };
 
@@ -265,6 +267,8 @@ useEffect(() => {
 
   const handleFlagPhoto = async (photo: any, index: number) => {
     // Check if already flagged
+      //TODO: this doesn't seem right
+      // Using timestamp as the unique identifier for flagging - should probably see if we can use an id of some kind thats unique
     const isCurrentlyFlagged = flaggedPhotos.includes(photo.timestamp);
     
     // Toggle flag status locally first (for immediate UI feedback)
@@ -350,6 +354,94 @@ useEffect(() => {
       }
     }
   };
+
+  const handleFavoritePhotos = async (photo: any, index: number) => {
+    const isCurrentlyFavorite = favoritePhotos.includes(photo.timestamp);
+
+    // Toggle favorite status locally first (for immediate UI feedback)
+    if (isCurrentlyFavorite) {
+      setFavoritePhotos(prev => prev.filter(id => id !== photo.timestamp));
+    } else {
+      setFavoritePhotos(prev => [...prev, photo.timestamp]);
+    }
+
+    // Only update Google Sheets if we have a spreadsheetId and session
+    if (spreadsheetId && session?.accessToken) {
+      try {
+        setLoading(true);
+
+        // First fetch the metadata to get sheet information
+        const metadata = await fetchSheetMetadata(spreadsheetId);
+
+        if (!metadata.sheets || metadata.sheets.length === 0) {
+          throw new Error("No sheets found in the spreadsheet");
+        }
+
+        // Get the first sheet's title
+        const firstSheetTitle = metadata.sheets[0].properties.title;
+        console.log(`Using sheet: "${firstSheetTitle}" for favorite update`);
+
+        // Row index is +2 because spreadsheet is 1-indexed and has a header row
+        const rowIndex = index + 2;
+
+        // The value to put in the "Favorite" column
+        const favoriteValue = isCurrentlyFavorite ? "" : "Yes";
+
+        // Try to update using the actual sheet title first
+        try {
+          const response = await fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${firstSheetTitle}!H${rowIndex}:H${rowIndex}?valueInputOption=RAW`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${session.accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                values: [[favoriteValue]]
+              }),
+            }
+          );
+
+          if (response.ok) {
+            console.log("Favorite status updated successfully");
+            return;
+          }
+
+          // If that fails, fall back to index 0
+          console.log("Updating by sheet name failed, trying index 0 instead");
+        } catch (error) {
+          console.log("Error updating by sheet name:", error);
+        }
+
+          // Fallback to index 0
+          const fallbackResponse = await fetch(
+              `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/0!H${rowIndex}:H${rowIndex}?valueInputOption=RAW`,
+              {
+                  method: "PUT",
+                  headers: {
+                      Authorization: `Bearer ${session.accessToken}`,
+                      "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                      values: [[favoriteValue]]
+                  }),
+              }
+          );
+
+          if (!fallbackResponse.ok) {
+              const error = await fallbackResponse.json();
+              console.error("Google Sheets API Error (all attempts failed):", error);
+          }
+
+      } catch (error) {
+          console.error("Error updating flag status:", error);
+      } finally {
+          setLoading(false);
+      }
+    }
+
+  }
   
   const extractFileId = (url: string) => {
     const match = url.match(/id=([a-zA-Z0-9-_]+)/);
@@ -388,6 +480,8 @@ useEffect(() => {
           uploadDate: row[3],
           uploadTime: row[4],
           fileLink: row[5],
+            flagged: row[6],
+            favorite: row[7],
         }));
         const photosWithThumbnails = await fetchThumbnails(photoData);
         setPhotos(photosWithThumbnails);
@@ -533,9 +627,22 @@ useEffect(() => {
                         size="xs"
                         style={{ marginTop: "1rem" }}
                         leftSection={<IconEye />}
-                        color={"limeGreen"}
+                        color={"blue"}
                       >
+
                         View
+                      </Button>
+                      <Button
+                          color="green"
+                          size="xs"
+                          onClick={() => handleFavoritePhotos(photo, index)}
+                          leftSection={<IconHeart />}
+                          style={{
+                            marginTop: "1rem",
+                            marginLeft: "0.5rem",
+                          }}
+                      >
+                        Favorite
                       </Button>
                       <Button
                       // Change color based on flag status - orange when flagged, yellow when not

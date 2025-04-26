@@ -49,8 +49,11 @@ export default function Sidebar() {
     processedImageCount,
     flaggedPhotos,
     setFlaggedPhotos,
+      setFavoritePhotos,
     showFlaggedOnly,
     setShowFlaggedOnly,
+    showFavoritesOnly,
+    setShowFavoritesOnly,
     // isProcessingModalOpen,
   } = useDataContext(); // Import state and handlers from DataContext
   
@@ -244,7 +247,8 @@ export default function Sidebar() {
         uploadDate: row[3], // Assuming upload date is in column D
         uploadTime: row[4], // Assuming upload time is in column E
         fileLink: row[5], // Assuming file link is in column F
-        flagged: row[6] === "Yes"
+        flagged: row[6], // Assuming flagged is in column G
+        favorites: row[7], // Assuming favorites is in column H
       }));
   
       const photosWithThumbnails = await fetchThumbnails(photoData);
@@ -255,6 +259,10 @@ export default function Sidebar() {
         .filter(photo => photo.flagged)
         .map(photo => photo.timestamp);
       setFlaggedPhotos(initialFlagged);
+      const initialFavorites = photosWithThumbnails
+          .filter(photo => photo.favorites)
+            .map(photo => photo.timestamp);
+      setFavoritePhotos(initialFavorites);
     } else {
       console.error("No values found in the sheet data");
       setGoogleAuthenticated(false);
@@ -623,6 +631,13 @@ export default function Sidebar() {
         }}
       />
       <Divider my="md" />
+
+      <Checkbox
+        label="Show Favorites Only?"
+        checked={showFavoritesOnly}
+        onChange={(event) => setShowFavoritesOnly(event.currentTarget.checked)}
+        style={{ marginTop: "1rem" }}
+        />
 
       <Checkbox
         label="Show Flagged Only?"
