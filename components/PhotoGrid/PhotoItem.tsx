@@ -1,6 +1,6 @@
 // ImageItem.js
 import { Checkbox, Button, Paper, Text, Loader, Grid } from "@mantine/core";
-import { IconEye, IconFlag, IconTrash } from "@tabler/icons-react";
+import {IconEye, IconFlag, IconHeart, IconTrash} from "@tabler/icons-react";
 import LazyLoad from "react-lazyload";
 import Image from "next/image";
 import { useDataContext } from "@/public/static/DataContext/DataContext";
@@ -9,11 +9,25 @@ interface PhotoItemProps {
   photo: any;
   onCheckboxChange: (photo: any) => void;
   onDelete: (photo: any, index: number) => void;
+  onFlag: (photo: any, index: number) => void;
+  onFavorite: (photo: any, index: number) => void;
   isSelected: boolean;
+  isFlagged: boolean;
+  isFavorite: boolean;
   index: number;
 }
 
-const PhotoItem: React.FC<PhotoItemProps> = ({ photo, onCheckboxChange, onDelete, isSelected, index }) => {
+const PhotoItem: React.FC<PhotoItemProps> = ({
+                   photo,
+                   onCheckboxChange,
+                   onDelete,
+                   onFlag,
+                   onFavorite,
+                   isSelected,
+                   isFlagged,
+                   isFavorite,
+                   index,
+                 }) => {
 
   const deletePhoto = async (photo: any, index: number) => {
     if (!spreadsheetId) {
@@ -161,35 +175,50 @@ const PhotoItem: React.FC<PhotoItemProps> = ({ photo, onCheckboxChange, onDelete
             <strong>Uploaded:</strong> {photo.timestamp || "N/A"}
           </Text>
           <Button
-            onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
-            size="xs"
-            style={{ marginTop: "1rem" }}
-            leftSection={<IconEye />}
-            color={"limeGreen"}
+              onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
+              size="xs"
+              style={{ marginTop: "1rem" }}
+              leftSection={<IconEye />}
+              color="blue"
           >
             View
           </Button>
+
           <Button
-            color="yellow"
-            size="xs"
-            // onClick={() => deletePhoto(photo, index)}
-            leftSection={<IconFlag />}
-            style={{
-              marginTop: "1rem",
-              marginLeft: "0.5rem",
-            }}
+              color={isFavorite ? "green" : "gray"}
+              size="xs"
+              onClick={() => onFavorite(photo, index)}
+              leftSection={<IconHeart />}
+              style={{
+                marginTop: "1rem",
+                marginLeft: "0.5rem",
+              }}
           >
-            Flag
+            {isFavorite ? "Unfavorite" : "Favorite"}
           </Button>
+
           <Button
-            color="red"
-            size="xs"
-            onClick={() => deletePhoto(photo, index)}
-            leftSection={<IconTrash />}
-            style={{
-              marginTop: "1rem",
-              marginLeft: "0.5rem",
-            }}
+              color={isFlagged ? "orange" : "yellow"}
+              size="xs"
+              onClick={() => onFlag(photo, index)}
+              leftSection={<IconFlag />}
+              style={{
+                marginTop: "1rem",
+                marginLeft: "0.5rem",
+              }}
+          >
+            {isFlagged ? "Unflag" : "Flag"}
+          </Button>
+
+          <Button
+              color="red"
+              size="xs"
+              onClick={() => onDelete(photo, index)}
+              leftSection={<IconTrash />}
+              style={{
+                marginTop: "1rem",
+                marginLeft: "0.5rem",
+              }}
           >
             Delete
           </Button>

@@ -6,6 +6,7 @@ import LazyLoad from "react-lazyload";
 import Image from "next/image";
 import { useDataContext } from "@/public/static/DataContext/DataContext";
 import Sidebar from "./Sidebar";
+import PhotoItem from "./PhotoItem";
 
 export default function PhotoGrid() {  
   const { 
@@ -535,170 +536,21 @@ useEffect(() => {
           <Grid gutter="lg" columns={12}>
             {sortedPhotos.map((photo, index) => {
               const timelapseIndex = selectedForTimelapse.findIndex(
-                (item) => item.timestamp === photo.timestamp
+                  (item) => item.timestamp === photo.timestamp
               );
               return (
-                <Grid.Col
-                  key={`${photo.name}-${index}`}
-                  span={isLargeScreen ? 3 : isMediumScreen ? 4 : isSmallScreen ? 6 : 12}
-                >
-                  <Paper
-                    withBorder
-                    shadow="md"
-                    radius="md"
-                    style={{
-                      height: "450px",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      padding: "1rem",
-                      position: "relative", // Needed for overlay positioning
-                    }}
-                  >
-                      {flaggedPhotos.includes(photo.timestamp) && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "0.5rem",
-                            right: "0.5rem",
-                        
-                          }}
-                        >
-                          <IconFlag size={30} />
-                        </div>
-                      )}
-
-
-                    {timelapseIndex !== -1 && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            bottom: ".5rem",
-                            right: ".5rem",
-                            width: "30px",
-                            height: "30px",
-                            backgroundColor: "grey",
-                            color: "#fff",
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "12px",
-                            fontWeight: "bold",
-                            zIndex: 2,
-                          }}
-                        >
-                          {timelapseIndex + 1}
-                        </div>
-                      )}
-                    <div style={{ position: "relative", width: "100%", height: "14rem" }}>
-                    <LazyLoad height={200} offset={100} once>
-                    <Image
-                      src={photo.thumbnailLink}
-                      alt={photo.fileLink}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      priority
-                      style={{
-                        objectFit: "contain",
-                      }}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = photo.thumbnailLink; // Fallback image
-                      }}
-                    />
-                    </LazyLoad>
-                    </div>
-                    <div>
-                      <Text size="sm">
-                        <strong>Location:</strong> {photo.location || "N/A"}
-                      </Text>
-                      <Text size="sm">
-                        <strong>Uploader:</strong> {photo.uploaderName || "N/A"}
-                      </Text>
-                      <Text size="sm">
-                        <strong>Taken:</strong> {photo.uploadDate || "N/A"} at{" "}
-                        {photo.uploadTime || "N/A"}
-                      </Text>
-                      <Text size="sm">
-                        <strong>Uploaded:</strong> {photo.timestamp || "N/A"}
-                      </Text>
-                      <Button
-                        onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
-                        size="xs"
-                        style={{ marginTop: "1rem" }}
-                        leftSection={<IconEye />}
-                        color={"blue"}
-                      >
-
-                        View
-                      </Button>
-                      <Button
-                          color="green"
-                          size="xs"
-                          onClick={() => handleFavoritePhotos(photo, index)}
-                          leftSection={<IconHeart />}
-                          style={{
-                            marginTop: "1rem",
-                            marginLeft: "0.5rem",
-                          }}
-                      >
-                        Favorite
-                      </Button>
-                      <Button
-                      // Change color based on flag status - orange when flagged, yellow when not
-                      color={flaggedPhotos.includes(photo.timestamp) ? "orange" : "yellow"}
-                      size="xs"
-                      onClick={() => handleFlagPhoto(photo, index)}
-                      leftSection={<IconFlag />}
-                      style={{
-                      marginTop: "1rem",
-                      marginLeft: "0.5rem",
-                      }}
-                      >
-                      {/* Dynamic text based on flag status */}
-                      {flaggedPhotos.includes(photo.timestamp) ? "Unflag" : "Flag"}
-                    </Button>
-                    {flaggedPhotos.includes(photo.timestamp) && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "0.5rem",
-                            right: "0.5rem", 
-                            width: "30px",
-                            height: "30px",
-                            backgroundColor: "orange",
-                            color: "#fff",
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            zIndex: 2,
-                          }}
-                        >
-                          <IconFlag size={16} />
-                        </div>
-                      )}
-                      <Button
-                        color="red"
-                        size="xs"
-                        onClick={() => deletePhoto(photo, index)}
-                        leftSection={<IconTrash />}
-                        style={{
-                          marginTop: "1rem",
-                          marginLeft: "0.5rem",
-                        }}
-                      >
-                        Delete
-                      </Button>
-                      <Checkbox
-                        label="Include in Timelapse"
-                        checked={timelapseIndex !== -1}
-                        onChange={() => handleCheckboxChange(photo)}
-                        style={{ marginTop: "1rem" }}
-                      />
-                    </div>
-                  </Paper>
-                </Grid.Col>
+                  <PhotoItem
+                      key={`${photo.name}-${index}`}
+                      photo={photo}
+                      index={index}
+                      isSelected={timelapseIndex !== -1}
+                      onCheckboxChange={handleCheckboxChange}
+                      onDelete={deletePhoto}
+                      onFlag={handleFlagPhoto}
+                      onFavorite={handleFavoritePhotos}
+                      isFlagged={flaggedPhotos.includes(photo.timestamp)}
+                      isFavorite={favoritePhotos.includes(photo.timestamp)}
+                  />
               );
             })}
             {hasMorePhotos && <div id="scroll-target" style={{ height: "1px" }} />}
