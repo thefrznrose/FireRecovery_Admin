@@ -143,91 +143,135 @@ const PhotoItem: React.FC<PhotoItemProps> = ({
               {index + 1}
             </div>
           )}
-        <div style={{ position: "relative", width: "100%", height: "14rem" }}>
-        <LazyLoad height={200} offset={100} once>
-        <Image
-          src={photo.thumbnailLink}
-          alt={photo.fileLink}
-          fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          priority
-          style={{
-            objectFit: "contain",
-          }}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = photo.thumbnailLink; // Fallback image
-          }}
-        />
-        </LazyLoad>
-        </div>
+          <div
+              style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: "85%",
+                  margin: "0 auto",
+                  aspectRatio: "4 / 3",
+                  height: "15rem",
+                  overflow: "hidden",
+                  borderRadius: "8px",
+                  boxShadow: "2px 4px 10px rgba(0, 0, 0, 0.15)",
+                  backgroundColor: "#f8f8f8", // fallback bg
+              }}
+          >
+              <LazyLoad height={200} offset={100} once>
+                  <Image
+                      src={photo.thumbnailLink}
+                      alt={photo.fileLink}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      priority
+                      style={{
+                          objectFit: "contain",
+                      }}
+                      onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = photo.thumbnailLink;
+                      }}
+                  />
+              </LazyLoad>
+          </div>
         <div>
-          <Text size="sm">
-            <strong>Location:</strong> {photo.location || "N/A"}
-          </Text>
-          <Text size="sm">
-            <strong>Uploader:</strong> {photo.uploaderName || "N/A"}
-          </Text>
-          <Text size="sm">
-            <strong>Taken:</strong> {photo.uploadDate || "N/A"} at{" "}
-            {photo.uploadTime || "N/A"}
-          </Text>
-          <Text size="sm">
-            <strong>Uploaded:</strong> {photo.timestamp || "N/A"}
-          </Text>
-          <Button
-              onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
-              size="xs"
-              style={{ marginTop: "1rem" }}
-              leftSection={<IconEye />}
-              color="blue"
-          >
-            View
-          </Button>
+            <div style={{ marginTop: "1rem", marginLeft:"1rem" }}>
+                {[
+                    { label: "Location", value: photo.location || "N/A" },
+                    { label: "Uploader", value: photo.uploaderName || "N/A" },
+                    { label: "Taken", value: `${photo.uploadDate || "N/A"} at ${photo.uploadTime || "N/A"}` },
+                    { label: "Uploaded", value: photo.timestamp || "N/A" },
+                ].map((item, index) => (
+                    <div
+                        key={index}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            marginBottom: "0.5rem",
+                        }}
+                    >
+                        <Text
+                            size="sm"
+                            color="dimmed"
+                            style={{
+                                width: "80px",
+                                flexShrink: 0,
+                            }}
+                        >
+                            {item.label}:
+                        </Text>
+                        <Text
+                            size="sm"
+                            style={{
+                                fontWeight: 500,
+                                flex: 1,
+                            }}
+                        >
+                            {item.value}
+                        </Text>
+                    </div>
+                ))}
+            </div>
+            <div style={{ marginTop: "1rem" }}>
+                <Grid gutter="xs" justify="center">
+                    <Grid.Col span={6}>
+                        <Button
+                            fullWidth
+                            size="xs"
+                            style={{ minWidth: "110px" }}
+                            color="blue"
+                            leftSection={<IconEye />}
+                            onClick={() => window.open(photo.fileLink, "_blank", "noopener,noreferrer")}
+                        >
+                            View
+                        </Button>
+                    </Grid.Col>
 
-          <Button
-              color={isFavorite ? "green" : "gray"}
-              size="xs"
-              onClick={() => onFavorite(photo, index)}
-              leftSection={<IconHeart />}
-              style={{
-                marginTop: "1rem",
-                marginLeft: "0.5rem",
-              }}
-          >
-            {isFavorite ? "Unfavorite" : "Favorite"}
-          </Button>
+                    <Grid.Col span={6}>
+                        <Button
+                            fullWidth
+                            size="xs"
+                            style={{ minWidth: "110px" }}
+                            color={isFavorite ? "pink" : "green"}
+                            onClick={() => onFavorite(photo, index)}
+                            leftSection={<IconHeart />}
+                        >
+                            {isFavorite ? "Unfavorite" : "Favorite"}
+                        </Button>
+                    </Grid.Col>
 
-          <Button
-              color={isFlagged ? "orange" : "yellow"}
-              size="xs"
-              onClick={() => onFlag(photo, index)}
-              leftSection={<IconFlag />}
-              style={{
-                marginTop: "1rem",
-                marginLeft: "0.5rem",
-              }}
-          >
-            {isFlagged ? "Unflag" : "Flag"}
-          </Button>
+                    <Grid.Col span={6}>
+                        <Button
+                            fullWidth
+                            size="xs"
+                            style={{ minWidth: "110px" }}
+                            color={isFlagged ? "orange" : "yellow"}
+                            onClick={() => onFlag(photo, index)}
+                            leftSection={<IconFlag />}
+                        >
+                            {isFlagged ? "Unflag" : "Flag"}
+                        </Button>
+                    </Grid.Col>
 
-          <Button
-              color="red"
-              size="xs"
-              onClick={() => onDelete(photo, index)}
-              leftSection={<IconTrash />}
-              style={{
-                marginTop: "1rem",
-                marginLeft: "0.5rem",
-              }}
-          >
-            Delete
-          </Button>
-          <Checkbox
-            label="Include in Timelapse"
-            checked={index !== -1}
-            onChange={() => onCheckboxChange(photo)}
-            style={{ marginTop: "1rem" }}
-          />
+                    <Grid.Col span={6}>
+                        <Button
+                            fullWidth
+                            size="xs"
+                            style={{ minWidth: "110px" }}
+                            color="red"
+                            onClick={() => onDelete(photo, index)}
+                            leftSection={<IconTrash />}
+                        >
+                            Delete
+                        </Button>
+                    </Grid.Col>
+                </Grid>
+                <Checkbox
+                    label="Include in Timelapse"
+                    checked={isSelected}
+                    onChange={() => onCheckboxChange(photo)}
+                    style={{ marginTop: "1rem", textAlign: "center" }}
+                />
+            </div>
         </div>
       </Paper>
     </Grid.Col>

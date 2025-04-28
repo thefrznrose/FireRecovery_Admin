@@ -86,7 +86,7 @@ const filterPhotos = () => {
 useEffect(() => {
   const results = filterPhotos();
   setFilteredPhotos(results);
-}, [photos, timeRange, startDate, endDate, locationFilter, showFlaggedOnly, flaggedPhotos]);
+}, [photos, timeRange, startDate, endDate, locationFilter, showFlaggedOnly, flaggedPhotos, showFavoritesOnly, favoritePhotos]);
 
 
   useEffect(() => {
@@ -104,6 +104,10 @@ useEffect(() => {
           return (a.uploaderName || "").localeCompare(b.uploaderName || "");
         case "uploader-desc":
           return (b.uploaderName || "").localeCompare(a.uploaderName || "");
+        case "favorites-first":
+          return (favoritePhotos.includes(b.timestamp) ? 1 : 0) - (favoritePhotos.includes(a.timestamp) ? 1 : 0);
+        case "flagged-first":
+          return (flaggedPhotos.includes(b.timestamp) ? 1 : 0) - (flaggedPhotos.includes(a.timestamp) ? 1 : 0);
         default:
           return 0;
       }

@@ -567,6 +567,8 @@ export default function Sidebar() {
           { value: "time-desc", label: "Taken Time/Date (Newest First)" },
           { value: "uploader-asc", label: "Uploader Name (A-Z)" },
           { value: "uploader-desc", label: "Uploader Name (Z-A)" },
+          { value: "favorites-first", label: "Favorites First" },
+          { value: "flagged-first", label: "Flagged First" },
         ]}
         value={sortOption}
         onChange={setSortOption}
