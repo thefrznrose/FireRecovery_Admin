@@ -40,6 +40,8 @@ export function DataContextProvider({ children }: DataProviderProps) {
 
     const [flaggedPhotos, setFlaggedPhotos] = useState<string[]>([]);
     const [showFlaggedOnly, setShowFlaggedOnly] = useState<boolean>(false);
+    const [favoritePhotos, setFavoritePhotos] = useState<string[]>([]);
+    const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false);
 
     const contextValues: ContextOfDataContext = {
         session,
@@ -84,7 +86,11 @@ export function DataContextProvider({ children }: DataProviderProps) {
         flaggedPhotos,
         setFlaggedPhotos,
         showFlaggedOnly,
-        setShowFlaggedOnly
+        setShowFlaggedOnly,
+        favoritePhotos,
+        setFavoritePhotos,
+        showFavoritesOnly,
+        setShowFavoritesOnly,
     };
 
     return (
