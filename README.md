@@ -428,47 +428,105 @@ The timelapse generation process follows these steps:
 ## 🚀 Next Steps for Future Development
 
 ### 1. Create Public-Facing Interface
-- Develop a separate view for public users to:
-  - View approved photos without editing capabilities
-  - Filter by location to see recovery progress
-  - View pre-generated timelapses
-- Implementation guidance:
-  - Create new pages in the `pages` directory for public routes
-  - Implement read-only versions of components
-  - Add role-based access control
+
+Develop a separate view for public users to:
+
+- View approved photos without editing capabilities
+- Filter by location to see recovery progress
+- View pre-generated timelapses
+
+#### 📱 Public Photo Submission Options
+
+Implement one or more of these approaches to enable public contribution:
+
+- **Web Upload Form**  
+  Create a simple, mobile-friendly form where visitors can upload photos directly:
+  - Implement basic validation (file type, size, required metadata)
+  - Add reCAPTCHA to prevent spam
+  - Store submissions in a "pending" state for admin approval
+
+- **Dedicated Email Submission**  
+  Set up a dedicated email address (e.g., `bsltfirerecoveryphotoproject@gmail.com`):
+  - Create an automated email processor to extract photos and metadata
+  - Add email templates for submission confirmation and status updates
+
+- **Location-Based QR Codes**  
+  Generate unique QR codes for each monitoring location:
+  - Place codes on trailhead signs with simple instructions
+  - QR codes open a mobile-optimized submission form pre-filled with location data
+  - Include photo examples of what to capture for consistency
+
+- **Custom Mobile Application**  
+  Develop a simple BSLT-branded mobile app for iOS and Android:
+  - Add camera integration with location tagging
+  - Provide educational content about fire recovery monitoring
+
+- **iNaturalist Integration**  
+  Partner with [iNaturalist](https://www.inaturalist.org/observations):
+  - Create a dedicated BSLT Fire Recovery project
+  - Develop an API integration to pull relevant observations automatically [API Docs](https://www.inaturalist.org/pages/api+reference)
+  - Add guidelines for proper tagging and documentation
+
+#### Implementation Guidance
+
+- Create new pages in the `pages` directory for public routes
+- Implement read-only versions of components
+- Add submission handlers and validation
+- Create a moderation queue for new submissions
+
+---
 
 ### 2. Add User Roles and Permissions
-- Implement role-based access control:
-  - Admin: Full access to all features
-  - Moderator: Can flag but not delete photos
-  - Viewer: Read-only access to approved content
-- Implementation guidance:
-  - Extend NextAuth.js configuration to include roles
-  - Add role information to user sessions
-  - Create middleware to check permissions
+
+Implement role-based access control:
+
+- **Admin**: Full access to all features
+- **Moderator**: Can flag but not delete photos
+- **Viewer**: Read-only access to approved content
+
+#### Implementation Guidance
+
+- Extend `NextAuth.js` configuration to include roles
+- Add role information to user sessions
+- Create middleware to check permissions
+
+---
 
 ### 3. Create Tests for All Features
-- Implement comprehensive testing:
-  - Unit tests for utility functions
-  - Component tests for UI elements
-  - Integration tests for API routes
-  - End-to-end tests for critical workflows
-- Implementation guidance:
-  - Utilize Jest and React Testing Library
-  - Create test files in a `__tests__` directory
-  - Add testing scripts to package.json
+
+Implement comprehensive testing:
+
+- **Unit Tests**: For utility functions
+- **Component Tests**: For UI elements
+- **Integration Tests**: For API routes
+- **End-to-End Tests**: For critical workflows
+
+#### Implementation Guidance
+
+- Utilize Jest and React Testing Library
+- Create test files in a `__tests__` directory
+- Add testing scripts to `package.json`
+
+---
 
 ### 4. Create New GitHub Repository and Deploy
-- Since the previous cohort is unreachable:
-  - Create a new GitHub repository
-  - Transfer all code with proper documentation
-  - Set up CI/CD pipelines
-- Deployment options:
-  - [Vercel](https://vercel.com/) (recommended for Next.js)
-  - [Netlify](https://www.netlify.com/)
-  - [AWS Amplify](https://aws.amazon.com/amplify/)
+
+Since the previous cohort is unreachable:
+
+- Create a new GitHub repository
+- Transfer all code with proper documentation
+- Set up CI/CD pipelines
+
+#### Deployment Options
+
+- **Vercel** (recommended for Next.js)
+- **Netlify**
+- **AWS Amplify**
+
+---
 
 ### 5. Additional Improvements
+
 - Enhance error handling and recovery mechanisms
 - Optimize performance for large photo collections
 - Add statistics and reporting features
